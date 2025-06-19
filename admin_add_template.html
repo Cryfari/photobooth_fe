@@ -3,119 +3,201 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tambah Template Baru - Admin</title>
+    <title>Add New Template - Admin Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin-top: 30px; background-color: #f4f4f4; color: #333; }
-        .container { background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.1); width: 90%; max-width: 600px;} /* Max-width disesuaikan */
-        h1 { text-align: center; color: #333; margin-bottom: 25px; }
-        label { display: block; margin-bottom: 8px; font-weight: bold; }
-        input[type="text"], textarea { 
-            width: calc(100% - 22px); 
-            padding: 10px; 
-            margin-bottom: 10px; /* Margin bottom dikurangi */
-            border: 1px solid #ddd; 
-            border-radius: 4px; 
-            font-family: sans-serif;
-            box-sizing: border-box;
+        /* =================================
+           1. SETUP DASAR & VARIABEL (Konsisten dengan Dashboard)
+           ================================= */
+        :root {
+            --sidebar-bg: #FFFFFF;
+            --main-bg: #F7F8FC;
+            --card-bg: #FFFFFF;
+            --primary-orange: #F58D3D;
+            --text-dark: #252733;
+            --text-gray: #9FA2B4;
+            --border-color: #DFE0EB;
+            --font-family: 'Mulish', sans-serif;
         }
-        textarea { min-height: 100px; resize: vertical; margin-bottom: 5px;}
-        
-        .prompt-actions { margin-bottom: 20px; }
-        #tryPromptButton {
-            background-color: #007bff; color: white; border:none; padding: 8px 12px; border-radius:4px; cursor:pointer; font-size:0.9em;
-        }
-        #tryPromptButton:hover { background-color: #0056b3; }
-        #tryPromptSpinner { display:none; margin-left:10px; font-style:italic; color:#555; font-size:0.9em;}
+        *, *::before, *::after { box-sizing: border-box; }
+        body { margin: 0; font-family: var(--font-family); background-color: var(--main-bg); color: var(--text-dark); font-size: 14px; }
 
-        #imagePreviewContainer { 
-            margin-top: 15px; margin-bottom: 20px; 
-            padding: 10px; 
-            border: 1px dashed #ccc; 
-            border-radius: 4px;
-            min-height: 100px; 
-            text-align: center;
-            display: none; /* Awalnya disembunyikan */
+        /* =================================
+           2. LAYOUT UTAMA (Konsisten dengan Dashboard)
+           ================================= */
+        .admin-layout { display: flex; min-height: 100vh; }
+        .sidebar { width: 255px; background-color: var(--sidebar-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; flex-shrink: 0; }
+        .main-content { flex-grow: 1; padding: 30px; }
+        .sidebar-header { padding: 30px; text-align: center; font-size: 1.2rem; font-weight: 700; letter-spacing: 0.3px; }
+        .sidebar-nav ul { list-style: none; padding: 0; margin: 0; }
+        .sidebar-nav a { display: flex; align-items: center; padding: 18px 30px; text-decoration: none; color: var(--text-gray); font-weight: 600; border-left: 3px solid transparent; transition: all 0.2s ease-in-out; }
+        .sidebar-nav a:hover { background-color: var(--main-bg); color: var(--primary-orange); }
+        .sidebar-nav a.active { background-color: rgba(245, 141, 61, 0.08); color: var(--primary-orange); border-left-color: var(--primary-orange); }
+
+        /* =================================
+           3. KONTEN UTAMA & FORMULIR
+           ================================= */
+        .content-header h1 { font-size: 1.5rem; font-weight: 700; margin: 0 0 30px 0; }
+        .content-card { background-color: var(--card-bg); border-radius: 8px; border: 1px solid var(--border-color); padding: 30px; }
+        
+        .form-group {
+            margin-bottom: 25px;
         }
-        #imagePreviewContainer p small { color: #555; display:block; margin-bottom:5px;}
-        #generatedImagePreview { 
-            max-width: 250px; /* Ukuran pratinjau disesuaikan */
-            max-height: 250px; 
-            border: 1px solid #eee;
-            border-radius: 4px;
+        .form-group label {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .form-group label span {
+            color: var(--danger-color);
+        }
+        .form-group input[type="text"],
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
         }
 
-        .form-actions { display: flex; justify-content: space-between; gap: 10px; margin-top: 10px;}
-        .form-actions button { color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; flex-grow: 1; }
-        #submitButton { background-color: #28a745; }
-        #submitButton:hover { background-color: #218838; }
-        #backButton { background-color: #6c757d; }
-        #backButton:hover { background-color: #5a6268; }
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .form-button {
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+        .form-button.primary {
+            background-color: var(--primary-orange);
+            color: white;
+            border-color: var(--primary-orange);
+        }
+        .form-button.secondary {
+            background-color: var(--card-bg);
+            color: var(--text-gray);
+            border-color: var(--border-color);
+        }
+
+        #imagePreviewContainer {
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 1px solid var(--border-color);
+        }
+        #generatedImagePreview {
+            max-width: 300px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
         
-        .message { margin-top: 20px; padding: 10px; border-radius: 4px; text-align: center; }
-        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .message { margin-top: 20px; padding: 12px; border-radius: 8px; display:none; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .success { background-color: #d4edda; color: #155724; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Tambah Template Baru</h1>
-        <form id="addTemplateForm">
-            <div>
-                <label for="template_name">Nama Template (tanpa .json/.png):</label>
-                <input type="text" id="template_name" name="template_name" required placeholder="Contoh: pemandangan_indah">
+
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                AI Photobooth
             </div>
-            <div>
-                <label for="template_promt">Prompt Template:</label>
-                <textarea id="template_promt" name="template_promt" required placeholder="Masukkan prompt untuk menghasilkan gambar pratinjau..."></textarea>
-            </div>
-            <div class="prompt-actions">
-                <button type="button" id="tryPromptButton">Coba & Hasilkan Gambar Pratinjau</button>
-                <span id="tryPromptSpinner">Menghasilkan gambar...</span>
-            </div>
-            
-            <div id="imagePreviewContainer">
-                <p><small>Pratinjau Gambar Template:</small></p>
-                <img id="generatedImagePreview" src="#" alt="Pratinjau Gambar">
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><p style="padding: 0 30px 10px; color: var(--text-gray); font-size: 0.8rem; text-transform: uppercase;">Settings</p></li>
+                    <li><a href="admin_dashboard.html" class="active">Manage Template</a></li>
+                    <li><a href="admin_change_password.html">Setting Password</a></li>
+                    <li><a href="admin_setting_gdrive.html">Setting Google Drive</a></li>
+                    <li><a href="#" id="logoutButton">Logout Admin</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div class="content-header">
+                <h1>Add New Template</h1>
             </div>
 
-            <div class="form-actions">
-                <button type="button" id="backButton">Kembali ke Dashboard</button>
-                <button type="submit" id="submitButton">Tambah Template</button>
+            <div class="content-card">
+                <form id="addTemplateForm">
+                    <div class="form-group">
+                        <label for="template_name">Template Name (without .json/.png) <span>*</span></label>
+                        <input type="text" id="template_name" name="template_name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="template_promt">Prompt Template <span>*</span></label>
+                        <textarea id="template_promt" name="template_promt" required></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" id="tryPromptButton" class="form-button primary">Try & Generate Preview Image</button>
+                    </div>
+
+                    <div id="imagePreviewContainer" style="display:none;">
+                        <p style="font-weight: 700;">Preview Image:</p>
+                        <img id="generatedImagePreview" src="#" alt="Pratinjau Gambar">
+                    </div>
+
+                    <hr style="border: none; border-top: 1px solid var(--border-color); margin: 30px 0;">
+
+                    <div class="form-actions">
+                        <button type="button" id="cancelButton" class="form-button secondary">Cancel</button>
+                        <button type="submit" id="submitButton" class="form-button primary">Add Template</button>
+                    </div>
+                </form>
+                <div id="message" class="message"></div>
             </div>
-        </form>
-        <div id="message" class="message" style="display:none;"></div>
+        </main>
     </div>
-
+    
     <script>
+        // Fungsionalitas JavaScript dari file admin_add_template.html yang lama
+        // dapat disalin dan ditempel di sini tanpa perubahan karena semua ID elemen
+        // dan logika intinya tetap sama.
+
         const addTemplateForm = document.getElementById('addTemplateForm');
         const messageDiv = document.getElementById('message');
-        const backButton = document.getElementById('backButton');
+        const cancelButton = document.getElementById('cancelButton');
         const tryPromptButton = document.getElementById('tryPromptButton');
-        const tryPromptSpinner = document.getElementById('tryPromptSpinner');
         const imagePreviewContainer = document.getElementById('imagePreviewContainer');
         const generatedImagePreview = document.getElementById('generatedImagePreview');
+        const logoutButton = document.getElementById('logoutButton');
         
         const token = localStorage.getItem('adminToken');
         const API_BASE_URL = 'http://127.0.0.1:8000'; 
-        let generatedTemplateImageBase64 = null; // Untuk menyimpan base64 gambar pratinjau
+        let generatedTemplateImageBase64 = null;
 
         if (!token) { window.location.href = 'admin_login.html'; }
 
-        function handleUnauthorized() { /* ... (Sama seperti sebelumnya) ... */ 
+        function handleUnauthorized() {
             localStorage.removeItem('adminToken');
-            localStorage.removeItem('googleAuthStatus');
             window.location.href = 'admin_login.html';
         }
 
-        backButton.addEventListener('click', () => { window.location.href = 'admin_dashboard.html'; });
+        function displayMessage(msg, type = 'success') {
+            messageDiv.textContent = msg;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+        }
 
-        // Fungsi untuk konversi Data URL (atau base64 murni) menjadi Blob
+        // Fungsi untuk konversi Data URL menjadi Blob
         function base64ToBlob(base64, contentType = 'image/png', sliceSize = 512) {
-            // Jika base64 string memiliki prefix data URL, hapus dulu
-            const base64Data = base64.startsWith('data:') ? base64.split(',')[1] : base64;
+            const base64Data = base64.split(',')[1];
             const byteCharacters = atob(base64Data);
             const byteArrays = [];
-
             for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
                 const slice = byteCharacters.slice(offset, offset + sliceSize);
                 const byteNumbers = new Array(slice.length);
@@ -128,25 +210,24 @@
             return new Blob(byteArrays, {type: contentType});
         }
 
+        logoutButton.addEventListener('click', (e) => { e.preventDefault(); handleUnauthorized(); });
+        cancelButton.addEventListener('click', () => { window.location.href = 'admin_dashboard.html'; });
+
         tryPromptButton.addEventListener('click', async () => {
             const template_promt = document.getElementById('template_promt').value.trim();
             messageDiv.style.display = 'none';
-            messageDiv.className = 'message';
 
             if (!template_promt) {
-                messageDiv.textContent = 'Prompt template tidak boleh kosong untuk dicoba.';
-                messageDiv.classList.add('error');
-                messageDiv.style.display = 'block';
+                displayMessage('Prompt template cannot be empty.', 'error');
                 return;
             }
 
             tryPromptButton.disabled = true;
-            tryPromptSpinner.style.display = 'inline';
-            imagePreviewContainer.style.display = 'none'; // Sembunyikan pratinjau lama
-            generatedTemplateImageBase64 = null; // Reset gambar lama
+            tryPromptButton.textContent = 'Generating...';
+            generatedTemplateImageBase64 = null;
 
             const formData = new FormData();
-            formData.append('template_prompt', template_promt); // Sesuai nama parameter di FastAPI
+            formData.append('template_prompt', template_promt);
 
             try {
                 const response = await fetch(`${API_BASE_URL}/try-template`, {
@@ -154,68 +235,49 @@
                     headers: { 'Authorization': `Bearer ${token}` },
                     body: formData
                 });
-
                 if (response.status === 401) { handleUnauthorized(); return; }
-                
                 const data = await response.json();
 
                 if (response.ok && data.generated_image_base64) {
                     generatedTemplateImageBase64 = data.generated_image_base64;
                     generatedImagePreview.src = `data:image/png;base64,${generatedTemplateImageBase64}`;
                     imagePreviewContainer.style.display = 'block';
-                    messageDiv.textContent = 'Gambar pratinjau berhasil dihasilkan.';
-                    messageDiv.classList.add('success');
-                    messageDiv.style.display = 'block';
+                    displayMessage('Preview image generated successfully.');
                 } else {
-                    generatedTemplateImageBase64 = null;
-                    messageDiv.textContent = data.detail || 'Gagal menghasilkan gambar pratinjau.';
-                    messageDiv.classList.add('error');
-                    messageDiv.style.display = 'block';
+                    throw new Error(data.detail || 'Failed to generate preview image.');
                 }
-
             } catch (error) {
-                console.error('Error trying template prompt:', error);
                 generatedTemplateImageBase64 = null;
-                messageDiv.textContent = 'Terjadi kesalahan jaringan saat mencoba prompt.';
-                messageDiv.classList.add('error');
-                messageDiv.style.display = 'block';
+                displayMessage(error.message, 'error');
             } finally {
                 tryPromptButton.disabled = false;
-                tryPromptSpinner.style.display = 'none';
+                tryPromptButton.textContent = 'Try & Generate Preview Image';
             }
         });
-
 
         addTemplateForm.addEventListener('submit', async function(event) {
             event.preventDefault();
             messageDiv.style.display = 'none';
-            messageDiv.className = 'message'; 
 
             const template_name = document.getElementById('template_name').value.trim();
             const template_promt = document.getElementById('template_promt').value.trim();
             
             if (!template_name || !template_promt) {
-                messageDiv.textContent = 'Nama template dan prompt tidak boleh kosong.';
-                messageDiv.classList.add('error');
-                messageDiv.style.display = 'block';
+                displayMessage('Template name and prompt cannot be empty.', 'error');
                 return;
             }
-
             if (!generatedTemplateImageBase64) {
-                messageDiv.textContent = 'Anda harus menghasilkan gambar pratinjau terlebih dahulu menggunakan tombol "Coba Prompt".';
-                messageDiv.classList.add('error');
-                messageDiv.style.display = 'block';
+                displayMessage('You must generate a preview image first.', 'error');
                 return;
             }
 
             const imageBlob = base64ToBlob(generatedTemplateImageBase64, 'image/png');
             const imageFile = new File([imageBlob], `${template_name}.png`, { type: 'image/png' });
 
-
             const formData = new FormData();
             formData.append('template_name', template_name);
             formData.append('template_promt', template_promt);
-            formData.append('template_image', imageFile); // Kirim sebagai file
+            formData.append('template_image', imageFile);
 
             try {
                 const response = await fetch(`${API_BASE_URL}/add-template`, {
@@ -223,29 +285,20 @@
                     headers: { 'Authorization': `Bearer ${token}` },
                     body: formData 
                 });
-
                 if (response.status === 401) { handleUnauthorized(); return; }
                 const data = await response.json();
 
                 if (response.ok) {
-                    messageDiv.textContent = data.message || 'Template berhasil ditambahkan.';
-                    messageDiv.classList.add('success');
-                    addTemplateForm.reset();
-                    imagePreviewContainer.style.display = 'none'; // Sembunyikan pratinjau
-                    generatedTemplateImageBase64 = null; // Reset
+                    displayMessage(data.message || 'Template added successfully.');
                     setTimeout(() => {
-                        window.location.href = `admin_dashboard.html?action=add_template_success&message=${encodeURIComponent(data.message || 'Template berhasil ditambahkan.')}`;
+                        window.location.href = `admin_dashboard.html`;
                     }, 1500);
                 } else {
-                    messageDiv.textContent = data.detail || 'Gagal menambahkan template.';
-                    messageDiv.classList.add('error');
+                    throw new Error(data.detail || 'Failed to add template.');
                 }
             } catch (error) {
-                console.error('Error adding template:', error);
-                messageDiv.textContent = 'Terjadi kesalahan jaringan saat menambahkan template.';
-                messageDiv.classList.add('error');
+                displayMessage(error.message, 'error');
             }
-            messageDiv.style.display = 'block';
         });
     </script>
 </body>

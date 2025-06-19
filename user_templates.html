@@ -3,51 +3,195 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pilih Template - Photobooth</title>
+    <title>Pilih Template - AI Photobooth</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin-top: 20px; background-color: #eef; color: #333; }
-        .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.1); width: 90%; max-width: 800px;}
-        h1 { text-align: center; }
-        .templates-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .template-item { border: 2px solid transparent; padding: 10px; text-align: center; cursor: pointer; border-radius: 4px; transition: border-color 0.3s; }
-        .template-item img { max-width: 100%; height: auto; border-radius: 4px; margin-bottom: 5px; }
-        .template-item.selected { border-color: #007bff; background-color: #e7f3ff;}
-        .template-item p { margin: 0; font-size: 0.9em; color: #555; }
-        .controls { text-align: center; margin-top: 20px; }
-        .controls button { background-color: #007bff; color: white; padding: 10px 20px; margin: 0 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
-        .controls button:hover { background-color: #0056b3; }
-        .controls button:disabled { background-color: #ccc; cursor: not-allowed; }
-        .controls .back-button { background-color: #6c757d; }
-        .controls .back-button:hover { background-color: #5a6268; }
-        .message { margin-top: 10px; text-align: center; color: red;}
+        /* =================================
+           1. SETUP DASAR & VARIABEL WARNA
+           ================================= */
+        :root {
+            --bg-color: #D9773B; /* Oranye dari desain, konsisten dengan halaman sebelumnya */
+            --text-color: #FFFFFF;
+            --button-bg-color: transparent;
+            --button-border-color: rgba(255, 255, 255, 0.7);
+            --button-hover-bg-color: rgba(255, 255, 255, 0.1);
+            --selection-outline-color: #FFFFFF;
+            --font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        /* =================================
+           2. STRUKTUR UTAMA HALAMAN
+           ================================= */
+        /* Menggunakan Flexbox untuk menata halaman secara vertikal */
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Kontainer utama untuk kisi dan judul */
+        .main-content {
+            flex-grow: 1; /* Mengambil sisa ruang vertikal */
+            padding: 20px 40px;
+            overflow-y: auto; /* Memungkinkan scrolling jika item banyak */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: clamp(1.8rem, 4vw, 2.5rem);
+            margin-top: 20px;
+            margin-bottom: 40px;
+        }
+        
+        /* =================================
+           3. KISI TEMPLATE (TEMPLATES GRID)
+           ================================= */
+        .templates-grid {
+            display: grid;
+            /* Kolom responsif: minimal 200px, mengisi ruang yang tersedia */
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 25px; /* Jarak antar item */
+            width: 100%;
+            max-width: 1200px; /* Batas lebar maksimum untuk kisi */
+        }
+        
+        .template-item {
+            border-radius: 20px; /* Sudut yang sangat membulat */
+            overflow: hidden; /* Penting! Memaksa gambar di dalamnya mengikuti bentuk border-radius */
+            cursor: pointer;
+            transition: transform 0.2s ease-out;
+            aspect-ratio: 1 / 1; /* Menjaga agar setiap item berbentuk persegi */
+            outline: 4px solid transparent; /* Outline untuk seleksi, tidak mempengaruhi layout */
+            outline-offset: -4px; /* Outline masuk ke dalam */
+            transition: transform 0.2s ease, outline-color 0.2s ease;
+        }
+        
+        .template-item:hover {
+            transform: scale(1.03); /* Efek pembesaran saat hover */
+        }
+
+        /* State ketika item dipilih */
+        .template-item.selected {
+            outline-color: var(--selection-outline-color);
+            transform: scale(1.05); /* Lebih besar saat dipilih */
+        }
+        
+        .template-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Gambar akan mengisi seluruh area item tanpa distorsi */
+            display: block;
+        }
+
+        .template-item p {
+            /* Kita sembunyikan nama di bawah gambar agar lebih bersih sesuai desain */
+            display: none;
+        }
+
+        /* =================================
+           4. KONTROL BAWAH (TOMBOL)
+           ================================= */
+        .page-controls {
+            flex-shrink: 0; /* Mencegah bar kontrol menyusut */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            height: 90px;
+        }
+
+        .page-controls button {
+            font-family: inherit;
+            font-size: 1.2rem;
+            font-weight: 600;
+            background-color: var(--button-bg-color);
+            color: var(--text-color);
+            border: 2px solid var(--button-border-color);
+            padding: 10px 30px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        .page-controls button:hover {
+            background-color: var(--button-hover-bg-color);
+            border-color: var(--text-color);
+        }
+
+        /* Tombol 'Lanjutkan' dinonaktifkan */
+        .page-controls button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: var(--button-border-color);
+            background-color: transparent;
+        }
+        
+        /* Pesan error atau notifikasi */
+        #message {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        .message:empty {
+             display: none;
+        }
+
     </style>
 </head>
 <body>
-    <div class="container">
+    
+    <div class="main-content">
         <h1>Pilih Template Favorit Anda</h1>
         <div id="templatesGrid" class="templates-grid">
             <p>Memuat template...</p>
         </div>
-        <div class="controls">
-            <button class="back-button" onclick="window.location.href='index.html'">Kembali</button>
-            <button id="continueToResultButton" disabled>Lanjutkan</button>
-        </div>
-        <p id="message" class="message"></p>
     </div>
+    
+    <div class="page-controls">
+        <button id="backButton">Kembali</button>
+        <button id="continueToResultButton" disabled>Lanjutkan</button>
+    </div>
+
+    <p id="message" class="message"></p>
 
     <script>
         const templatesGrid = document.getElementById('templatesGrid');
         const continueButton = document.getElementById('continueToResultButton');
+        const backButton = document.getElementById('backButton');
         const messageEl = document.getElementById('message');
         const API_BASE_URL = 'http://127.0.0.1:8000';
         let selectedTemplateName = null;
 
+        /**
+         * Mengambil daftar template dari API dan menampilkannya.
+         */
         async function loadTemplates() {
             messageEl.textContent = '';
+            // Validasi: Pastikan ada foto yang sudah diambil dari halaman sebelumnya
             if (!sessionStorage.getItem('capturedImage')) {
-                messageEl.textContent = "Tidak ada foto yang diambil. Silakan kembali dan ambil foto.";
-                templatesGrid.innerHTML = '<p>Tidak ada foto. <a href="index.html">Kembali ke Webcam</a></p>';
+                messageEl.textContent = "Tidak ada foto. Silakan kembali dan ambil foto.";
+                templatesGrid.innerHTML = '<p>Tidak ada foto. Anda akan diarahkan kembali...</p>';
                 continueButton.disabled = true;
+                setTimeout(() => window.location.href = 'user_take_photo.html', 3000);
                 return;
             }
 
@@ -57,24 +201,25 @@
                     throw new Error(`Gagal mengambil template: ${response.statusText}`);
                 }
                 const data = await response.json();
-                templatesGrid.innerHTML = ''; // Clear loading message
+                templatesGrid.innerHTML = ''; // Hapus pesan "Memuat template..."
 
                 if (data.images && data.images.length > 0) {
                     data.images.forEach(template => {
                         const item = document.createElement('div');
                         item.classList.add('template-item');
-                        item.dataset.templateName = template.name;
+                        item.dataset.templateName = template.name; // Simpan nama di data-attribute
                         
                         const img = document.createElement('img');
-                        img.src = `${API_BASE_URL}/${template.url}`; // Assuming URL is relative to API base
-                        img.alt = template.name;
+                        img.src = `${API_BASE_URL}/${template.url}`;
+                        img.alt = `Template ${template.name}`;
+                        img.loading = 'lazy'; // Optimasi: Muat gambar saat akan terlihat
                         
                         const namePara = document.createElement('p');
-                        namePara.textContent = template.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()); // Prettify name
+                        namePara.textContent = template.name;
 
                         item.appendChild(img);
                         item.appendChild(namePara);
-                        item.addEventListener('click', () => selectTemplate(item, template.name));
+                        
                         templatesGrid.appendChild(item);
                     });
                 } else {
@@ -83,27 +228,55 @@
             } catch (error) {
                 console.error('Error loading templates:', error);
                 templatesGrid.innerHTML = `<p>Error memuat template: ${error.message}</p>`;
-                messageEl.textContent = `Error: ${error.message}`;
             }
         }
-
-        function selectTemplate(selectedItem, templateName) {
-            document.querySelectorAll('.template-item').forEach(item => item.classList.remove('selected'));
+        
+        /**
+         * Menangani logika pemilihan template.
+         * @param {HTMLElement} selectedItem - Elemen div.template-item yang diklik.
+         */
+        function selectTemplate(selectedItem) {
+            // Hapus kelas 'selected' dari semua item lain
+            document.querySelectorAll('.template-item.selected').forEach(item => item.classList.remove('selected'));
+            
+            // Tambahkan kelas 'selected' ke item yang diklik
             selectedItem.classList.add('selected');
-            selectedTemplateName = templateName;
-            sessionStorage.setItem('selectedTemplateName', templateName);
+            
+            // Simpan nama template dan aktifkan tombol 'Lanjutkan'
+            selectedTemplateName = selectedItem.dataset.templateName;
+            sessionStorage.setItem('selectedTemplateName', selectedTemplateName);
             continueButton.disabled = false;
             messageEl.textContent = '';
         }
 
+        // ============================
+        // EVENT LISTENERS
+        // ============================
+
+        // [OPTIMASI] Menggunakan Event Delegation
+        templatesGrid.addEventListener('click', (event) => {
+            // Cari elemen .template-item terdekat dari elemen yang diklik
+            const clickedItem = event.target.closest('.template-item');
+            if (clickedItem) {
+                selectTemplate(clickedItem);
+            }
+        });
+        
+        // Tombol Kembali
+        backButton.addEventListener('click', () => {
+            window.location.href = 'user_take_photo.html';
+        });
+
+        // Tombol Lanjutkan
         continueButton.addEventListener('click', () => {
-            if (selectedTemplateName && sessionStorage.getItem('capturedImage')) {
+            if (selectedTemplateName) {
                 window.location.href = 'user_result.html';
             } else {
                 messageEl.textContent = "Silakan pilih template terlebih dahulu.";
             }
         });
 
+        // Inisialisasi
         loadTemplates();
     </script>
 </body>

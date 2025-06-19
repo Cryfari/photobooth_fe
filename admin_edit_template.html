@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Template - Admin Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* CSS di sini sama persis dengan halaman "Add New Template" untuk konsistensi */
+        :root {
+            --sidebar-bg: #FFFFFF; --main-bg: #F7F8FC; --card-bg: #FFFFFF;
+            --primary-orange: #F58D3D; --text-dark: #252733; --text-gray: #9FA2B4;
+            --border-color: #DFE0EB; --font-family: 'Mulish', sans-serif;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        body { margin: 0; font-family: var(--font-family); background-color: var(--main-bg); color: var(--text-dark); font-size: 14px; }
+        .admin-layout { display: flex; min-height: 100vh; }
+        .sidebar { width: 255px; background-color: var(--sidebar-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; flex-shrink: 0; }
+        .main-content { flex-grow: 1; padding: 30px; }
+        .sidebar-header { padding: 30px; text-align: center; font-size: 1.2rem; font-weight: 700; letter-spacing: 0.3px; }
+        .sidebar-nav ul { list-style: none; padding: 0; margin: 0; }
+        .sidebar-nav a { display: flex; align-items: center; padding: 18px 30px; text-decoration: none; color: var(--text-gray); font-weight: 600; border-left: 3px solid transparent; transition: all 0.2s ease-in-out; }
+        .sidebar-nav a:hover { background-color: var(--main-bg); color: var(--primary-orange); }
+        .sidebar-nav a.active { background-color: rgba(245, 141, 61, 0.08); color: var(--primary-orange); border-left-color: var(--primary-orange); }
+        .content-header h1 { font-size: 1.5rem; font-weight: 700; margin: 0 0 30px 0; }
+        .content-card { background-color: var(--card-bg); border-radius: 8px; border: 1px solid var(--border-color); padding: 30px; }
+        .form-group { margin-bottom: 25px; }
+        .form-group label { display: block; font-weight: 700; margin-bottom: 8px; }
+        .form-group label span { color: var(--danger-color); }
+        .form-group textarea {
+            width: 100%; padding: 12px; border: 1px solid var(--border-color);
+            border-radius: 8px; font-family: inherit; font-size: 14px;
+            min-height: 150px; resize: vertical;
+        }
+        .form-actions { display: flex; gap: 15px; margin-top: 20px; }
+        .form-button {
+            padding: 10px 24px; border-radius: 8px; font-size: 0.9rem;
+            font-weight: 700; cursor: pointer; border: 1px solid transparent;
+        }
+        .form-button.primary { background-color: var(--primary-orange); color: white; border-color: var(--primary-orange); }
+        .form-button.secondary { background-color: var(--card-bg); color: var(--text-gray); border-color: var(--border-color); }
+        .message { margin-top: 20px; padding: 12px; border-radius: 8px; display:none; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .success { background-color: #d4edda; color: #155724; }
+    </style>
+</head>
+<body>
+
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">AI Photobooth</div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><p style="padding: 0 30px 10px; color: var(--text-gray); font-size: 0.8rem; text-transform: uppercase;">Settings</p></li>
+                    <li><a href="admin_dashboard.html" class="active">Manage Template</a></li>
+                    <li><a href="admin_change_password.html">Setting Password</a></li>
+                    <li><a href="admin_setting_gdrive.html">Setting Google Drive</a></li>
+                    <li><a href="#" id="logoutButton">Logout Admin</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div class="content-header">
+                <h1 id="pageTitle">Edit Prompt Template</h1>
+            </div>
+
+            <div class="content-card">
+                <form id="editTemplateForm">
+                    <input type="hidden" id="templateName">
+                    <div class="form-group">
+                        <label for="template_promt">Prompt Template <span>*</span></label>
+                        <textarea id="template_promt" name="template_promt" required placeholder="Loading prompt..."></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" id="cancelButton" class="form-button secondary">Cancel</button>
+                        <button type="submit" id="submitButton" class="form-button primary">Save</button>
+                    </div>
+                </form>
+                <div id="message" class="message"></div>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:8000';
+        const token = localStorage.getItem('adminToken');
+
+        const pageTitleEl = document.getElementById('pageTitle');
+        const editForm = document.getElementById('editTemplateForm');
+        const templateNameInput = document.getElementById('templateName');
+        const promptTextarea = document.getElementById('template_promt');
+        const messageDiv = document.getElementById('message');
+        const cancelButton = document.getElementById('cancelButton');
+        const logoutButton = document.getElementById('logoutButton');
+
+        function handleUnauthorized() {
+            localStorage.removeItem('adminToken');
+            window.location.href = 'admin_login.html';
+        }
+
+        function displayMessage(msg, type = 'success') {
+            messageDiv.textContent = msg;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+        }
+
+        // Fungsi untuk mengambil data template saat halaman dimuat
+        async function loadTemplateData() {
+            if (!token) { handleUnauthorized(); return; }
+
+            // 1. Ambil nama template dari URL
+            const params = new URLSearchParams(window.location.search);
+            const templateName = params.get('name');
+
+            if (!templateName) {
+                alert('Template name not specified.');
+                window.location.href = 'admin_dashboard.html';
+                return;
+            }
+
+            // 2. Set judul halaman dan simpan nama di input tersembunyi
+            const formattedName = templateName.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            pageTitleEl.textContent = `Edit Prompt Template: ${formattedName}`;
+            templateNameInput.value = templateName;
+
+            // 3. Ambil data prompt yang ada dari backend
+            try {
+                // Idealnya ada endpoint `/get-template/{name}`, tapi kita gunakan yang ada
+                const response = await fetch(`${API_BASE_URL}/get-templates`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.status === 401) { handleUnauthorized(); return; }
+                if (!response.ok) throw new Error('Could not fetch template data.');
+
+                const templates = await response.json();
+                const currentTemplate = templates.find(t => t.name === templateName);
+
+                if (currentTemplate && currentTemplate.prompt) {
+                    promptTextarea.value = currentTemplate.prompt;
+                } else {
+                    throw new Error(`Template "${templateName}" not found.`);
+                }
+            } catch (error) {
+                displayMessage(error.message, 'error');
+                promptTextarea.value = 'Failed to load prompt.';
+                promptTextarea.disabled = true;
+            }
+        }
+
+        // Event listener untuk form submit
+        editForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const templateName = templateNameInput.value;
+            const newPrompt = promptTextarea.value.trim();
+
+            if (!newPrompt) {
+                displayMessage('Prompt cannot be empty.', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('template_prompt', newPrompt);
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/update-template/${templateName}`, {
+                    method: 'PATCH',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                if (response.status === 401) { handleUnauthorized(); return; }
+                const data = await response.json();
+
+                if (response.ok) {
+                    displayMessage('Template updated successfully!');
+                    setTimeout(() => window.location.href = 'admin_dashboard.html', 1500);
+                } else {
+                    throw new Error(data.detail || 'Failed to update template.');
+                }
+            } catch (error) {
+                displayMessage(error.message, 'error');
+            }
+        });
+
+        // Event listener untuk tombol lain
+        cancelButton.addEventListener('click', () => { window.location.href = 'admin_dashboard.html'; });
+        logoutButton.addEventListener('click', (e) => { e.preventDefault(); handleUnauthorized(); });
+        
+        // Panggil fungsi untuk memuat data saat halaman dibuka
+        document.addEventListener('DOMContentLoaded', loadTemplateData);
+    </script>
+</body>
+</html>

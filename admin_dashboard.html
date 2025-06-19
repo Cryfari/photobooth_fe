@@ -3,246 +3,653 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <title>Admin Dashboard - AI Photobooth</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        /* ... (CSS yang sudah ada tetap sama) ... */
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin-top: 50px; background-color: #f4f4f4; color: #333; }
-        .container { background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 600px;}
-        h1 { color: #333; }
-        .buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-        .buttons button { background-color: #007bff; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; width: 200px; }
-        .buttons button:hover { background-color: #0056b3; }
-        #logoutButton { background-color: #dc3545; margin-top: 20px; }
-        #logoutButton:hover { background-color: #c82333; }
-        .message { margin-top: 15px; padding: 10px; border-radius: 4px; text-align: center; word-wrap: break-word; max-width: 90%;}
-        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
-        #folderIdSection { margin-top: 25px; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #f9f9f9; display: none; }
-        #folderIdSection h3 { margin-top: 0; color: #333; }
-        #folderIdSection label { display: block; margin-bottom: 5px; font-weight: bold; text-align: left;}
-        #folderIdSection input[type="text"] { width: calc(100% - 22px); padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px;}
-        #folderIdSection button { background-color: #5cb85c; color: white; padding: 10px 15px; width: auto; }
-        #folderIdSection button:hover { background-color: #4cae4c; }
-        #currentFolderIdDisplay { font-weight: normal; color: #555; }
+        /* =================================
+           1. SETUP DASAR & VARIABEL
+           ================================= */
+        :root {
+            --sidebar-bg: #FFFFFF;
+            --main-bg: #F7F8FC;
+            --card-bg: #FFFFFF;
+            --primary-orange: #F58D3D;
+            --text-dark: #252733;
+            --text-gray: #9FA2B4;
+            --border-color: #DFE0EB;
+            --danger-color: #D73737;
+            --font-family: 'Mulish', sans-serif;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: var(--font-family);
+            background-color: var(--main-bg);
+            color: var(--text-dark);
+            font-size: 14px;
+        }
+
+        /* =================================
+           2. LAYOUT UTAMA (SIDEBAR + MAIN CONTENT)
+           ================================= */
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 255px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 30px;
+            overflow-x: hidden;
+        }
+
+        /* =================================
+           3. SIDEBAR STYLING
+           ================================= */
+        .sidebar-header {
+            padding: 30px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+
+        .sidebar-nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar-nav a {
+            display: flex;
+            align-items: center;
+            padding: 18px 30px;
+            text-decoration: none;
+            color: var(--text-gray);
+            font-weight: 600;
+            border-left: 3px solid transparent;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .sidebar-nav a:hover {
+            background-color: var(--main-bg);
+            color: var(--primary-orange);
+        }
+
+        .sidebar-nav a.active {
+            background-color: rgba(245, 141, 61, 0.08);
+            color: var(--primary-orange);
+            border-left-color: var(--primary-orange);
+        }
+
+        /* =================================
+           4. MAIN CONTENT HEADER
+           ================================= */
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .content-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .add-new-button {
+            background-color: var(--primary-orange);
+            color: white;
+            padding: 8px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        /* =================================
+           5. KARTU KONTEN, TABEL & PENCARIAN
+           ================================= */
+        .content-card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .card-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .card-toolbar p {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+        
+        .search-wrapper {
+            position: relative;
+            width: 300px;
+        }
+        
+        .search-wrapper svg {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            fill: var(--text-gray);
+        }
+        
+        #searchInput {
+            width: 100%;
+            padding: 10px 15px 10px 40px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 20px 30px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+        
+        th {
+            color: var(--text-gray);
+            font-weight: 700;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2px;
+        }
+
+        table tr:last-child td {
+            border-bottom: none;
+        }
+
+        td .template-info {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            font-weight: 600;
+        }
+        
+        td .template-info img {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+        
+        td .delete-btn, td .edit-btn {
+            color: var(--danger-color);
+            cursor: pointer;
+            font-weight: 600;
+            background: none;
+            border: none;
+            padding: 0;
+            font-size: 14px;
+        }
+        
+        td .edit-btn {
+            color: var(--primary-orange);
+            margin-right: 20px;
+        }
+
+        /* =================================
+           6. PAGINASI
+           ================================= */
+        .pagination-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 30px;
+            color: var(--text-gray);
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .pagination-info {
+            flex-shrink: 0;
+        }
+
+        .items-per-page-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto; /* Dorong ke kanan */
+        }
+        
+        #itemsPerPageSelect {
+            font-family: inherit;
+            font-weight: 600;
+            color: var(--text-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 5px;
+        }
+        
+        .pagination-nav {
+            display: flex;
+            align-items: center;
+            margin-left: 20px; /* Jarak dari pemilih item */
+        }
+
+        .pagination-nav button {
+            background: none;
+            border: none;
+            color: var(--text-gray);
+            font-weight: 600;
+            padding: 5px 10px;
+            margin: 0 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        
+        .pagination-nav button.active {
+            background-color: var(--primary-orange);
+            color: white;
+        }
+        
+        .loader {
+            text-align: center;
+            padding: 50px;
+        }
+
+        /* =================================
+           7. MODAL KONFIRMASI
+           ================================= */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(37, 39, 51, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0s 0.3s;
+        }
+
+        .modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.visible .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-content h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+            color: var(--text-dark);
+        }
+
+        .modal-content p {
+            margin: 0 0 25px 0;
+            color: var(--text-gray);
+            line-height: 1.5;
+        }
+
+        .modal-content hr {
+            border: none;
+            border-top: 1px solid var(--border-color);
+            margin: 0 -30px 25px -30px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .modal-button {
+            flex-grow: 1;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .modal-button.cancel {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-gray);
+        }
+
+        .modal-button.delete {
+            background-color: var(--danger-color);
+            border: 1px solid var(--danger-color);
+            color: white;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Admin Dashboard</h1>
-        <div id="googleStatusMessage" class="message" style="display:none;"></div>
-        <div class="buttons">
-            <button onclick="window.location.href='admin_change_password.html'">Ubah Password</button>
-            <button id="googleLoginButton" style="display:none;">Login dengan Google</button>
-            <button id="googleLogoutButton" style="display:none;">Logout dari Google</button>
-            <button onclick="window.location.href='admin_add_template.html'">Tambah Template</button>
-            <button onclick="window.location.href='admin_manage_templates.html'">Kelola Template</button> 
-        </div>
-        
-        <div id="folderIdSection">
-            <h3>Pengaturan Folder Google Drive</h3>
-            <p>Folder ID Saat Ini: <strong id="currentFolderIdDisplay">- Belum Diatur -</strong></p>
-            <div>
-                <label for="folderIdInput">Masukkan Folder ID Baru:</label>
-                <input type="text" id="folderIdInput" placeholder="Contoh: 1aBcDeFgHiJkLmNoPqRsXYZ">
-            </div>
-            <button id="saveFolderIdButton">Simpan Folder ID</button>
-            <div id="folderIdMessage" class="message" style="display:none; margin-top:10px;"></div>
-        </div>
 
-        <button id="logoutButton">Logout Admin</button>
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">AI Photobooth</div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><p style="padding: 0 30px 10px; color: var(--text-gray); font-size: 0.8rem; text-transform: uppercase;">Settings</p></li>
+                    <li><a href="admin_dashboard.html" class="active">Manage Template</a></li>
+                    <li><a href="admin_change_password.html">Setting Password</a></li>
+                    <li><a href="admin_setting_gdrive.html">Setting Google Drive</a></li>
+                    <li><a href="#" id="logoutButton">Logout Admin</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div class="content-header">
+                <h1>Template</h1>
+                <a href="admin_add_template.html" class="add-new-button">Add New Template</a>
+            </div>
+
+            <div class="content-card">
+                <div class="card-toolbar">
+                    <p id="totalTemplates">All Templates</p>
+                    <div class="search-wrapper">
+                        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                        <input type="text" id="searchInput" placeholder="Search by name">
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Image</th>
+                                <th>Name</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="templatesTableBody">
+                            <tr><td colspan="3" class="loader">Loading templates...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="pagination-controls">
+                    <div id="paginationInfo"></div>
+                    <div class="items-per-page-selector">
+                        <select id="itemsPerPageSelect">
+                            <option value="5" selected>5</option>
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                        </select>
+                        <span>per page</span>
+                    </div>
+                    <div id="paginationNav" class="pagination-nav"></div>
+                </div>
+            </div>
+        </main>
     </div>
 
+    <div id="deleteConfirmationModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Delete Template</h2>
+            <p id="deleteModalText">Are you sure you would like to do this?</p>
+            <hr>
+            <div class="modal-actions">
+                <button id="cancelDeleteBtn" class="modal-button cancel">Cancel</button>
+                <button id="confirmDeleteBtn" class="modal-button delete">Delete</button>
+            </div>
+        </div>
+    </div>
+    
     <script>
-        // ... (JavaScript yang sudah ada sebelumnya tetap di sini, tidak perlu diubah untuk penambahan tombol ini) ...
-        const token = localStorage.getItem('adminToken'); // Pastikan didefinisikan jika belum
-        const API_BASE_URL = 'http://127.0.0.1:8000'; // Pastikan didefinisikan
-        // Fungsi handleUnauthorized, checkGoogleLoginStatus, dll. tetap ada
-        // ... (seluruh JavaScript sebelumnya) ...
-         if (!token) { window.location.href = 'admin_login.html'; } // Pengecekan token dasar
+        // ============================
+        // 1. STATE MANAGEMENT & CONFIG
+        // ============================
+        let allTemplates = [];
+        let searchTerm = '';
+        let currentPage = 1;
+        let itemsPerPage = 5;
+        const API_BASE_URL = 'http://127.0.0.1:8000';
+        const token = localStorage.getItem('adminToken');
 
-        function handleUnauthorized() { /* ... definisi ... */ 
-            localStorage.removeItem('adminToken');
-            localStorage.removeItem('googleAuthStatus');
-            document.getElementById('folderIdSection').style.display = 'none';
-            window.location.href = 'admin_login.html';
+        // ============================
+        // 2. SELEKSI ELEMEN DOM
+        // ============================
+        const tableBody = document.getElementById('templatesTableBody');
+        const totalTemplatesEl = document.getElementById('totalTemplates');
+        const paginationInfoEl = document.getElementById('paginationInfo');
+        const paginationNavEl = document.getElementById('paginationNav');
+        const logoutButton = document.getElementById('logoutButton');
+        const itemsPerPageSelect = document.getElementById('itemsPerPageSelect');
+        const searchInput = document.getElementById('searchInput');
+        const deleteModal = document.getElementById('deleteConfirmationModal');
+        const deleteModalText = document.getElementById('deleteModalText');
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+
+        // ============================
+        // 3. FUNGSI UTAMA
+        // ============================
+
+        function displayData() {
+            const filteredTemplates = allTemplates.filter(template => 
+                template.name.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+            const paginatedItems = filteredTemplates.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+            renderTable(paginatedItems);
+            renderPagination(filteredTemplates.length);
         }
-        function updateGoogleButtonVisibility(isLoggedIn) { /* ... definisi ... */
-            const googleLoginButton = document.getElementById('googleLoginButton');
-            const googleLogoutButton = document.getElementById('googleLogoutButton');
-            const folderIdSection = document.getElementById('folderIdSection');
-            if (isLoggedIn) {
-                googleLoginButton.style.display = 'none';
-                googleLogoutButton.style.display = 'inline-block';
-                folderIdSection.style.display = 'block';
-            } else {
-                googleLoginButton.style.display = 'inline-block';
-                googleLogoutButton.style.display = 'none';
-                folderIdSection.style.display = 'none';
-                document.getElementById('currentFolderIdDisplay').textContent = '- Belum Diatur -';
-                document.getElementById('folderIdInput').value = '';
+
+        function renderTable(templatesToRender) {
+            tableBody.innerHTML = '';
+            if (templatesToRender.length === 0) {
+                const message = searchTerm ? 'No matching templates found.' : 'No templates have been added yet.';
+                tableBody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 40px;">${message}</td></tr>`;
+                return;
+            }
+
+            templatesToRender.forEach(template => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <div class="template-info">
+                            <img src="${API_BASE_URL}/${template.url}" alt="${template.name}">
+                        </div>
+                    </td>
+                    <td>
+                        <div class="template-info">
+                            ${template.name.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </div>
+                    </td>
+                    <td style="text-align: right;">
+                        <button class="edit-btn">Edit</button>
+                        <button class="delete-btn">Delete</button>
+                    </td>
+                `;
+                row.querySelector('.edit-btn').addEventListener('click', () => {
+                    window.location.href = `admin_edit_template.html?name=${template.name}`;
+                });
+                row.querySelector('.delete-btn').addEventListener('click', () => {
+                    deleteTemplate(template.name);
+                });
+                tableBody.appendChild(row);
+            });
+        }
+
+        function renderPagination(totalItems) {
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            paginationNavEl.innerHTML = '';
+            
+            const startItem = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+            const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+            paginationInfoEl.textContent = `Showing ${startItem}-${endItem} of ${totalItems}`;
+            
+            if (totalPages <= 1) return;
+
+            for (let i = 1; i <= totalPages; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                if (i === currentPage) button.classList.add('active');
+                button.addEventListener('click', () => {
+                    currentPage = i;
+                    displayData();
+                });
+                paginationNavEl.appendChild(button);
             }
         }
-        async function checkGoogleLoginStatus() { /* ... definisi ... */ 
-            const googleStatusMessageDiv = document.getElementById('googleStatusMessage');
-            const folderIdMessage = document.getElementById('folderIdMessage');
-            googleStatusMessageDiv.style.display = 'none';
-            googleStatusMessageDiv.className = 'message';
-            folderIdMessage.style.display = 'none'; 
+        
+        async function fetchTemplates() {
             try {
-                const response = await fetch(`${API_BASE_URL}/google-drive/status`, {
-                    method: 'GET',
+                const response = await fetch(`${API_BASE_URL}/get-templates`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (response.status === 401) { handleUnauthorized(); return; }
-                const data = await response.json();
-                if (response.ok) {
-                    updateGoogleButtonVisibility(data.is_logged_in);
-                    localStorage.setItem('googleAuthStatus', data.is_logged_in ? 'loggedIn' : 'loggedOut');
-                    googleStatusMessageDiv.textContent = data.message;
-                    googleStatusMessageDiv.classList.add(data.is_logged_in ? (data.refreshed_during_check ? 'info' : 'success') : 'info');
-                    if (data.is_logged_in) {
-                        document.getElementById('currentFolderIdDisplay').textContent = data.drive_folder_id || '- Belum Diatur -';
-                    }
-                } else {
-                    updateGoogleButtonVisibility(false);
-                    localStorage.setItem('googleAuthStatus', 'loggedOut');
-                    googleStatusMessageDiv.textContent = data.detail || "Gagal memeriksa status Google Drive.";
-                    googleStatusMessageDiv.classList.add('error');
-                }
+                if (!response.ok) throw new Error('Failed to fetch templates.');
+                
+                allTemplates = await response.json();
+                totalTemplatesEl.textContent = `All Templates (${allTemplates.length})`;
+                itemsPerPageSelect.value = itemsPerPage;
+                displayData();
+                
             } catch (error) {
-                updateGoogleButtonVisibility(false);
-                localStorage.setItem('googleAuthStatus', 'loggedOut');
-                googleStatusMessageDiv.textContent = 'Kesalahan jaringan saat memeriksa status Google Drive.';
-                googleStatusMessageDiv.classList.add('error');
+                console.error("Error fetching templates:", error);
+                tableBody.innerHTML = `<tr><td colspan="3" class="loader">Error loading data. Please try again.</td></tr>`;
             }
-            googleStatusMessageDiv.style.display = 'block';
-        }
-        // Panggilan checkGoogleLoginStatus dan logika parameter URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const redirectMessage = urlParams.get('message');
-        const redirectError = urlParams.get('error');
-        const action = urlParams.get('action');
-
-        if ((action === 'add_template_success' || action === 'manage_template_action') && redirectMessage) {
-            document.getElementById('googleStatusMessage').textContent = decodeURIComponent(redirectMessage);
-            document.getElementById('googleStatusMessage').classList.add(redirectError ? 'error' : 'success');
-            document.getElementById('googleStatusMessage').style.display = 'block';
-            window.history.replaceState({}, document.title, window.location.pathname);
-            if (action !== 'add_template_success') checkGoogleLoginStatus(); // Jangan panggil ganda jika baru dari add_template
-            else if(action === 'add_template_success' && !document.getElementById('googleLoginButton')) { // Jika elemen google ada
-                 // Ini berarti checkGoogleLoginStatus sudah pernah dipanggil, cukup tampilkan pesan
-            } else {
-                checkGoogleLoginStatus();
-            }
-        } else if (redirectMessage) { 
-            document.getElementById('googleStatusMessage').textContent = decodeURIComponent(redirectMessage);
-            document.getElementById('googleStatusMessage').classList.add(redirectError ? 'error' : 'success');
-            document.getElementById('googleStatusMessage').style.display = 'block';
-            window.history.replaceState({}, document.title, window.location.pathname);
-            checkGoogleLoginStatus(); 
-        } else {
-            checkGoogleLoginStatus();
         }
 
-        // Event listeners untuk tombol Google & Simpan Folder ID (tidak berubah)
-        document.getElementById('googleLoginButton').addEventListener('click', async () => { /* ... implementasi ... */ 
-             const googleStatusMessageDiv = document.getElementById('googleStatusMessage');
-             googleStatusMessageDiv.style.display = 'none';
+        function showConfirmationModal(templateName) {
+            return new Promise((resolve) => {
+                deleteModalText.textContent = `Are you sure you want to delete "${templateName}"? This action cannot be undone.`;
+                deleteModal.classList.add('visible');
+
+                const handleConfirm = () => {
+                    deleteModal.classList.remove('visible');
+                    removeListeners();
+                    resolve(true);
+                };
+
+                const handleCancel = () => {
+                    deleteModal.classList.remove('visible');
+                    removeListeners();
+                    resolve(false);
+                };
+                
+                const removeListeners = () => {
+                    confirmDeleteBtn.removeEventListener('click', handleConfirm);
+                    cancelDeleteBtn.removeEventListener('click', handleCancel);
+                };
+
+                confirmDeleteBtn.addEventListener('click', handleConfirm, { once: true });
+                cancelDeleteBtn.addEventListener('click', handleCancel, { once: true });
+            });
+        }
+
+        async function deleteTemplate(templateName) {
+            const userConfirmed = await showConfirmationModal(templateName);
+            if (!userConfirmed) return;
+            
             try {
-                const response = await fetch(`${API_BASE_URL}/google-drive/get-auth-url`, {
-                    method: 'GET',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.status === 401) { handleUnauthorized(); return; }
-                const data = await response.json();
-                if (response.ok) {
-                    if (data.authorization_url) { window.location.href = data.authorization_url; } 
-                    else {
-                        googleStatusMessageDiv.textContent = 'URL otorisasi tidak diterima.';
-                        googleStatusMessageDiv.classList.add('error');
-                        googleStatusMessageDiv.style.display = 'block';
-                    }
-                } else {
-                    googleStatusMessageDiv.textContent = `Gagal memulai login Google: ${data.detail || response.statusText}`;
-                    googleStatusMessageDiv.classList.add('error');
-                    googleStatusMessageDiv.style.display = 'block';
-                }
-            } catch (error) {
-                googleStatusMessageDiv.textContent = 'Kesalahan jaringan (Google Login).';
-                googleStatusMessageDiv.classList.add('error');
-                googleStatusMessageDiv.style.display = 'block';
-            }
-        });
-        document.getElementById('googleLogoutButton').addEventListener('click', async () => { /* ... implementasi ... */ 
-            const googleStatusMessageDiv = document.getElementById('googleStatusMessage');
-            const folderIdMessage = document.getElementById('folderIdMessage');
-            googleStatusMessageDiv.style.display = 'none';
-            folderIdMessage.style.display = 'none';
-            try {
-                const response = await fetch(`${API_BASE_URL}/google-drive/logout`, {
+                const response = await fetch(`${API_BASE_URL}/delete-template/${templateName}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (response.status === 401) { handleUnauthorized(); return; }
                 const data = await response.json();
-                if (response.ok) {
-                    googleStatusMessageDiv.textContent = data.message || 'Logout Google berhasil.';
-                    googleStatusMessageDiv.classList.add('success');
-                } else {
-                    googleStatusMessageDiv.textContent = `Gagal logout Google: ${data.detail || response.statusText}`;
-                    googleStatusMessageDiv.classList.add('error');
-                }
-            } catch (error) {
-                googleStatusMessageDiv.textContent = 'Kesalahan jaringan (Google Logout).';
-                googleStatusMessageDiv.classList.add('error');
-            }
-            googleStatusMessageDiv.style.display = 'block';
-            await checkGoogleLoginStatus(); 
-        });
-        document.getElementById('saveFolderIdButton').addEventListener('click', async () => { /* ... implementasi ... */
-            const folderIdInput = document.getElementById('folderIdInput');
-            const folderIdMessage = document.getElementById('folderIdMessage');
-            const currentFolderIdDisplay = document.getElementById('currentFolderIdDisplay');
+                if (!response.ok) throw new Error(data.detail || 'Failed to delete template.');
 
-            const folderId = folderIdInput.value.trim();
-            folderIdMessage.style.display = 'none';
-            folderIdMessage.className = 'message';
-            if (!folderId) {
-                folderIdMessage.textContent = 'Folder ID tidak boleh kosong.';
-                folderIdMessage.classList.add('error');
-                folderIdMessage.style.display = 'block';
-                return;
-            }
-            try {
-                const response = await fetch(`${API_BASE_URL}/google-drive/set-folder-id`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
-                    body: JSON.stringify({ folder_id: folderId })
-                });
-                if (response.status === 401) { handleUnauthorized(); return; }
-                const data = await response.json();
-                if (response.ok) {
-                    folderIdMessage.textContent = data.message || 'Folder ID disimpan.';
-                    folderIdMessage.classList.add('success');
-                    currentFolderIdDisplay.textContent = data.folder_id || folderId;
-                    folderIdInput.value = ''; 
-                } else {
-                    folderIdMessage.textContent = data.detail || 'Gagal simpan Folder ID.';
-                    folderIdMessage.classList.add('error');
-                }
+                alert(data.detail || 'Template deleted successfully.');
+                currentPage = 1;
+                fetchTemplates();
             } catch (error) {
-                folderIdMessage.textContent = 'Kesalahan jaringan (Simpan Folder ID).';
-                folderIdMessage.classList.add('error');
+                console.error('Error deleting template:', error);
+                alert(`Error: ${error.message}`);
             }
-            folderIdMessage.style.display = 'block';
-        });
-         document.getElementById('logoutButton').addEventListener('click', () => {
+        }
+
+        function handleUnauthorized() {
             localStorage.removeItem('adminToken');
-            localStorage.removeItem('googleAuthStatus');
             window.location.href = 'admin_login.html';
+        }
+
+        // ============================
+        // 4. EVENT LISTENERS
+        // ============================
+        
+        logoutButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleUnauthorized();
         });
 
+        itemsPerPageSelect.addEventListener('change', () => {
+            itemsPerPage = parseInt(itemsPerPageSelect.value, 10);
+            currentPage = 1;
+            displayData();
+        });
+
+        searchInput.addEventListener('input', () => {
+            searchTerm = searchInput.value;
+            currentPage = 1;
+            displayData();
+        });
+
+        // ============================
+        // 5. INISIALISASI
+        // ============================
+        if (!token) {
+            handleUnauthorized();
+        } else {
+            fetchTemplates();
+        }
     </script>
 </body>
 </html>

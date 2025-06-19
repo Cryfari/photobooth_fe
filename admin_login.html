@@ -3,44 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Login</title>
+    <title>Admin Login - AI Photobooth</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin-top: 50px; background-color: #f4f4f4; color: #333; }
-        .container { background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.1); width: 300px; }
-        h1 { text-align: center; color: #333; }
-        label { display: block; margin-bottom: 8px; font-weight: bold; }
-        input[type="password"] { width: calc(100% - 22px); padding: 10px; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 4px; }
-        button { background-color: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; }
-        button:hover { background-color: #0056b3; }
-        .message { margin-top: 15px; padding: 10px; border-radius: 4px; text-align: center; }
-        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        /* CSS tidak ada perubahan, tetap sama seperti sebelumnya */
+        :root {
+            --bg-start-color: #FFF9F0;
+            --bg-end-color: #FFFFFF;
+            --card-bg-color: #FFFFFF;
+            --primary-text-color: #1a1a1a;
+            --secondary-text-color: #555555;
+            --button-bg-color: #E88D38;
+            --button-text-color: #FFFFFF;
+            --border-color: #e0e0e0;
+            --font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body {
+            height: 100%; margin: 0; font-family: var(--font-family);
+            background: radial-gradient(ellipse at top, var(--bg-start-color), var(--bg-end-color) 70%);
+        }
+        .login-container { display: flex; justify-content: center; align-items: center; height: 100%; padding: 20px; }
+        .login-card {
+            background-color: var(--card-bg-color); padding: 40px; border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); width: 100%; max-width: 400px;
+        }
+        h1 { text-align: center; font-size: 1.8rem; color: var(--primary-text-color); margin-top: 0; margin-bottom: 30px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--secondary-text-color); font-size: 0.9rem; }
+        .password-wrapper { position: relative; }
+        input[type="password"], input[type="text"] {
+            width: 100%; padding: 12px 40px 12px 12px; border: 1px solid var(--border-color);
+            border-radius: 8px; font-size: 1rem; color: var(--primary-text-color);
+        }
+        input::placeholder { color: #aaaaaa; }
+        .toggle-password {
+            position: absolute; top: 50%; right: 12px; transform: translateY(-50%);
+            background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center;
+        }
+        .toggle-password svg { width: 20px; height: 20px; fill: #999999; }
+        .options-group { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .remember-me { display: flex; align-items: center; font-size: 0.9rem; color: var(--secondary-text-color); }
+        input[type="checkbox"] { margin-right: 8px; }
+        .submit-button {
+            width: 100%; padding: 14px; background-color: var(--button-bg-color); color: var(--button-text-color);
+            border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s;
+        }
+        .submit-button:hover { background-color: #d17a2a; }
+        .message { margin-top: 20px; padding: 10px; border-radius: 4px; text-align: center; display: none; }
+        .error { background-color: #f8d7da; color: #721c24; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Admin Login</h1>
-        <form id="loginForm">
-            <div>
-                <label for="password">Password:</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            <button type="submit">Login</button>
-        </form>
-        <div id="message" class="message" style="display:none;"></div>
+
+    <div class="login-container">
+        <div class="login-card">
+            <h1>Sign In Admin</h1>
+            <form id="loginForm" novalidate>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="password" placeholder="password" required>
+                        <button type="button" id="togglePassword" class="toggle-password" aria-label="Tampilkan atau sembunyikan password">
+                            <svg id="eyeIcon" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                            <svg id="eyeSlashIcon" viewBox="0 0 24 24" style="display: none;"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.44-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="options-group">
+                    <label class="remember-me">
+                        <input type="checkbox" id="rememberMe">
+                        Remember me
+                    </label>
+                </div>
+                <button type="submit" class="submit-button">Sign in</button>
+            </form>
+            <div id="message" class="message"></div>
+        </div>
     </div>
 
     <script>
         const loginForm = document.getElementById('loginForm');
+        const passwordInput = document.getElementById('password');
         const messageDiv = document.getElementById('message');
+        const togglePasswordButton = document.getElementById('togglePassword');
+        const eyeIcon = document.getElementById('eyeIcon');
+        const eyeSlashIcon = document.getElementById('eyeSlashIcon');
+        const rememberMeCheckbox = document.getElementById('rememberMe'); // [BARU] Ambil elemen checkbox
         const API_BASE_URL = 'http://127.0.0.1:8000';
+
+        togglePasswordButton.addEventListener('click', () => {
+            const isPassword = passwordInput.type === 'password';
+            passwordInput.type = isPassword ? 'text' : 'password';
+            eyeIcon.style.display = isPassword ? 'none' : 'block';
+            eyeSlashIcon.style.display = isPassword ? 'block' : 'none';
+        });
 
         loginForm.addEventListener('submit', async function(event) {
             event.preventDefault();
             messageDiv.style.display = 'none';
-            messageDiv.className = 'message'; // Reset classes
+            messageDiv.className = 'message';
 
-            const password = document.getElementById('password').value;
+            const password = passwordInput.value;
+            const remember = rememberMeCheckbox.checked; // [BARU] Dapatkan status checkbox
 
             try {
                 const response = await fetch(`${API_BASE_URL}/login`, {
@@ -48,16 +112,18 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ password: password })
+                    // [DIMODIFIKASI] Kirim status 'remember' ke backend
+                    body: JSON.stringify({ 
+                        password: password,
+                        remember: remember 
+                    })
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
+                    // Simpan token yang diterima. Backend akan menentukan masa berlakunya.
                     localStorage.setItem('adminToken', data.access_token);
-                    messageDiv.textContent = 'Login berhasil! Mengarahkan ke dashboard...';
-                    messageDiv.classList.add('success');
-                    messageDiv.style.display = 'block';
                     window.location.href = 'admin_dashboard.html';
                 } else {
                     messageDiv.textContent = data.detail || 'Password salah.';

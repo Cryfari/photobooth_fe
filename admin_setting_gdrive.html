@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setting Google Drive - Admin Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* =================================
+           1. SETUP DASAR & VARIABEL
+           ================================= */
+        :root {
+            --sidebar-bg: #FFFFFF;
+            --main-bg: #F7F8FC;
+            --card-bg: #FFFFFF;
+            --primary-orange: #F58D3D;
+            --text-dark: #252733;
+            --text-gray: #9FA2B4;
+            --border-color: #DFE0EB;
+            --font-family: 'Mulish', sans-serif;
+            --success-color: #29CC97;
+            --google-button-bg: #FDF1F1;
+            --google-button-text: #CE4747;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: var(--font-family);
+            background-color: var(--main-bg);
+            color: var(--text-dark);
+            font-size: 14px;
+        }
+
+        /* =================================
+           2. LAYOUT UTAMA (SIDEBAR + MAIN CONTENT)
+           ================================= */
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 255px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 30px;
+        }
+
+        /* =================================
+           3. SIDEBAR STYLING
+           ================================= */
+        .sidebar-header {
+            padding: 30px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+
+        .sidebar-nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar-nav a {
+            display: flex;
+            align-items: center;
+            padding: 18px 30px;
+            text-decoration: none;
+            color: var(--text-gray);
+            font-weight: 600;
+            border-left: 3px solid transparent;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .sidebar-nav a:hover {
+            background-color: var(--main-bg);
+            color: var(--primary-orange);
+        }
+
+        .sidebar-nav a.active {
+            background-color: rgba(245, 141, 61, 0.08);
+            color: var(--primary-orange);
+            border-left-color: var(--primary-orange);
+        }
+
+        /* =================================
+           4. KONTEN & KARTU FORMULIR
+           ================================= */
+        .content-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0 0 30px 0;
+        }
+
+        .form-container {
+            display: flex;
+            justify-content: center;
+        }
+
+        .form-card {
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            max-width: 550px;
+            text-align: center;
+        }
+
+        .form-card h2 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .form-card .subtitle {
+            color: var(--text-gray);
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+
+        .form-group {
+            text-align: left;
+            margin-bottom: 10px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            color: var(--text-dark);
+        }
+        
+        input::placeholder {
+            color: #ccc;
+        }
+
+        input[readonly] {
+            background-color: #f0f2f5;
+            color: var(--text-gray);
+            font-weight: 600;
+            cursor: default;
+        }
+        
+        .success-message {
+            color: var(--success-color);
+            font-weight: 600;
+            margin: 10px 0 20px 0;
+            text-align: left;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .form-button {
+            flex-grow: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+
+        .form-button.google-login-new {
+            background-color: var(--google-button-bg);
+            color: var(--google-button-text);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+        }
+        .form-button.google-login-new:hover {
+            background-color: #FCE6E6;
+        }
+
+        .form-button.primary {
+            background-color: var(--primary-orange);
+            color: white;
+        }
+        .form-button.primary:hover {
+            background-color: #d17a2a;
+        }
+
+        .form-button.secondary {
+            background-color: #F0F2F5;
+            color: var(--text-gray);
+            border: 1px solid var(--border-color);
+        }
+        .form-button.secondary:hover {
+            background-color: #e0e2e5;
+        }
+
+        .form-button.logout-button {
+            background-color: var(--text-gray);
+            color: white;
+        }
+        .form-button.logout-button:hover {
+            background-color: #8a8c9a;
+        }
+        
+        .message {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            display:none;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">AI Photobooth</div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><p style="padding: 0 30px 10px; color: var(--text-gray); font-size: 0.8rem; text-transform: uppercase;">Settings</p></li>
+                    <li><a href="admin_dashboard.html">Manage Template</a></li>
+                    <li><a href="admin_change_password.html">Setting Password</a></li>
+                    <li><a href="admin_setting_gdrive.html" class="active">Setting Google Drive</a></li>
+                    <li><a href="#" id="logoutAdminButton">Logout Admin</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div class="content-header">
+                <h1>Setting Google Drive</h1>
+            </div>
+
+            <div id="viewContainer" class="form-container">
+                
+                <div id="loginView" class="form-card hidden">
+                    <h2>Login to your account</h2>
+                    <button id="googleLoginButton" class="form-button google-login-new">
+                        <svg style="width:20px;height:20px" viewBox="0 0 24 24"><path fill="currentColor" d="M21.35,11.1H12.18V13.83H18.69C18.36,17.64 15.19,19.27 12.19,19.27C8.36,19.27 5,16.25 5,12.5C5,8.75 8.36,5.73 12.19,5.73C15.19,5.73 17.5,6.78 17.5,6.78L19.27,5C19.27,5 16.56,3 12.19,3C7.2,3 3.5,6.58 3.5,12.5C3.5,18.42 7.2,22 12.19,22C17.5,22 21.5,18.33 21.5,12.91C21.5,12.26 21.45,11.66 21.35,11.1Z" /></svg>
+                        Continue with Google
+                    </button>
+                </div>
+
+                <div id="settingsView" class="form-card hidden">
+                    <h2>Google Drive Folder Settings</h2>
+                    <p class="subtitle" id="currentFolderIdStatus">Current ID Folder: - Loading... -</p>
+                    
+                    <form id="folderIdForm" novalidate>
+                        <div class="form-group">
+                            <label for="folderIdInput">Input your new ID folder</label>
+                            <input type="text" id="folderIdInput" placeholder="Example: 1aBcDeFgHiJkLmNoPqRsXYZ" required>
+                        </div>
+                        <p id="successMessage" class="success-message hidden">Yeay! Google Drive Connected!</p>
+                        
+                        <div class="button-group hidden" id="save-cancel-group">
+                            <button type="submit" class="form-button primary">Save Folder ID</button>
+                            <button type="button" id="cancelButton" class="form-button secondary">Cancel</button>
+                        </div>
+                        <div class="button-group hidden" id="edit-button-group">
+                            <button type="button" id="editFolderIdButton" class="form-button primary">Edit Folder ID</button>
+                        </div>
+                    </form>
+                    <button id="googleLogoutButton" class="form-button logout-button">Logout from Google</button>
+                </div>
+                
+                <div id="message" class="message"></div>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        const token = localStorage.getItem('adminToken');
+        if (!token) { window.location.href = 'admin_login.html'; }
+
+        const API_BASE_URL = 'http://127.0.0.1:8000';
+
+        // Elemen-elemen View
+        const loginView = document.getElementById('loginView');
+        const settingsView = document.getElementById('settingsView');
+        const messageDiv = document.getElementById('message');
+
+        // Elemen Form
+        const folderIdInput = document.getElementById('folderIdInput');
+        const currentFolderIdStatusEl = document.getElementById('currentFolderIdStatus');
+        const successMessageEl = document.getElementById('successMessage');
+        const folderIdForm = document.getElementById('folderIdForm');
+        
+        // Grup Tombol & Tombol Individual
+        const saveCancelGroup = document.getElementById('save-cancel-group');
+        const editButtonGroup = document.getElementById('edit-button-group');
+        const editFolderIdButton = document.getElementById('editFolderIdButton');
+        const cancelButton = document.getElementById('cancelButton');
+        const googleLoginButton = document.getElementById('googleLoginButton');
+        const googleLogoutButton = document.getElementById('googleLogoutButton');
+        const logoutAdminButton = document.getElementById('logoutAdminButton');
+
+        let originalFolderId = '';
+
+        function displayMessage(msg, type = 'success') {
+            messageDiv.textContent = msg;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+            setTimeout(() => { messageDiv.style.display = 'none' }, 4000);
+        }
+
+        function setDisplayMode(isDisplayMode) {
+            folderIdInput.readOnly = isDisplayMode;
+            successMessageEl.classList.toggle('hidden', !isDisplayMode);
+            saveCancelGroup.classList.toggle('hidden', isDisplayMode);
+            editButtonGroup.classList.toggle('hidden', !isDisplayMode);
+        }
+
+        async function checkStatusAndRenderView() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/google-drive/status`, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (response.status === 401) { handleUnauthorized(); return; }
+                const data = await response.json();
+                
+                if (data.is_logged_in) {
+                    loginView.classList.add('hidden');
+                    settingsView.classList.remove('hidden');
+                    
+                    originalFolderId = data.drive_folder_id || '';
+                    folderIdInput.value = originalFolderId;
+
+                    if (originalFolderId) {
+                        currentFolderIdStatusEl.textContent = 'Current ID Folder: - Connected -';
+                        setDisplayMode(true);
+                    } else {
+                        currentFolderIdStatusEl.textContent = 'Current ID Folder: - Not Set -';
+                        editButtonGroup.classList.add('hidden');
+                        saveCancelGroup.classList.remove('hidden');
+                        cancelButton.classList.add('hidden');
+                    }
+                } else {
+                    settingsView.classList.add('hidden');
+                    loginView.classList.remove('hidden');
+                }
+            } catch (error) {
+                displayMessage('Error checking Google Drive status.', 'error');
+                settingsView.classList.add('hidden');
+                loginView.classList.remove('hidden');
+            }
+        }
+
+        folderIdForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const folderId = folderIdInput.value.trim();
+            if (!folderId) {
+                displayMessage('Folder ID cannot be empty.', 'error');
+                return;
+            }
+            try {
+                const response = await fetch(`${API_BASE_URL}/google-drive/set-folder-id`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ folder_id: folderId })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || 'Failed to save Folder ID.');
+                
+                displayMessage(data.message || 'Folder ID saved successfully!', 'success');
+                originalFolderId = folderId;
+                setDisplayMode(true);
+                currentFolderIdStatusEl.textContent = 'Current ID Folder: - Connected -';
+            } catch (error) {
+                displayMessage(error.message, 'error');
+            }
+        });
+        
+        editFolderIdButton.addEventListener('click', () => {
+            setDisplayMode(false);
+            cancelButton.classList.remove('hidden');
+            folderIdInput.focus();
+        });
+
+        cancelButton.addEventListener('click', () => {
+            folderIdInput.value = originalFolderId;
+            // Jika ID asli memang ada, kembali ke mode display. Jika tidak, tetap di mode edit.
+            if (originalFolderId) {
+                setDisplayMode(true);
+            }
+        });
+        
+        googleLoginButton.addEventListener('click', async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/google-drive/get-auth-url`, { headers: { 'Authorization': `Bearer ${token}` } });
+                const data = await response.json();
+                if (response.ok && data.authorization_url) {
+                    window.location.href = data.authorization_url;
+                } else {
+                    throw new Error(data.detail || 'Could not get authorization URL.');
+                }
+            } catch (error) {
+                displayMessage(error.message, 'error');
+            }
+        });
+
+        googleLogoutButton.addEventListener('click', async () => {
+            if (!confirm('Are you sure you want to disconnect your Google account?')) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/google-drive/logout`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || 'Logout failed.');
+                displayMessage('Successfully disconnected from Google.', 'success');
+                checkStatusAndRenderView();
+            } catch (error) {
+                displayMessage(error.message, 'error');
+            }
+        });
+
+        logoutAdminButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleUnauthorized();
+        });
+
+        function handleUnauthorized() {
+            localStorage.removeItem('adminToken');
+            window.location.href = 'admin_login.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', checkStatusAndRenderView);
+    </script>
+</body>
+</html>

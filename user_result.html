@@ -1,154 +1,281 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hasil Gambar - Photobooth</title>
-  <style>
-    /* CSS tetap sama, tidak ada perubahan */
-    body {
-      font-family: sans-serif; display: flex; flex-direction: column;
-      align-items: center; margin-top: 20px; background-color: #eef; color: #333;
-    }
-    .container {
-      background-color: #fff; padding: 20px; border-radius: 8px;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1); text-align: center;
-      width: 90%; max-width: 700px;
-    }
-    h1 { color: #333; }
-    #loadingMessage { font-size: 1.2em; color: #007bff; }
-    #resultContainer { display: none; }
-    #generatedImage {
-      max-width: 100%; height: auto; border: 1px solid #ddd;
-      margin-bottom: 15px; border-radius: 4px;
-    }
-    .controls button {
-      background-color: #28a745; color: white; padding: 10px 20px;
-      border: none; border-radius: 5px; cursor: pointer; font-size: 16px;
-    }
-    .controls button:hover { background-color: #218838; }
-    .message { margin-top: 10px; font-weight: bold; }
-    .error { color: red; }
-    .success { color: green; }
-    #driveUploadStatus { margin-top: 10px; padding: 10px; border-radius: 4px; display:none; }
-    #qrCodeContainer { margin-top: 20px; display:none; }
-    #qrCodeImage { max-width: 200px; height: auto; border: 1px solid #ddd; border-radius: 4px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hasil - AI Photobooth</title>
+    <style>
+        /* =================================
+           1. SETUP DASAR & VARIABEL WARNA
+           ================================= */
+        :root {
+            --bg-color: #D9773B; /* Oranye */
+            --frame-bg-color: #FEFBF5; /* Krem/Putih */
+            --text-color: #FFFFFF;
+            --loading-spinner-color: #FFFFFF;
+            --finished-button-color: #FFFFFF;
+            --finished-button-bg: transparent;
+            --font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* =================================
+           2. KONTEN UTAMA
+           ================================= */
+        .result-container {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .result-frame {
+            background-color: var(--frame-bg-color);
+            border-radius: 20px;
+            width: 90vw;
+            height: 90vh;
+            max-width: 800px;
+            max-height: 600px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative; /* Untuk posisi absolut elemen di dalamnya */
+        }
+
+        #resultImage {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: none;
+        }
+
+        /* =================================
+           3. FOOTER (TOMBOL & QR)
+           ================================= */
+        .result-footer {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            height: 80px;
+        }
+
+        #finishedButton {
+            font-family: inherit;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--finished-button-color);
+            background: var(--finished-button-bg);
+            border: none;
+            cursor: pointer;
+            padding: 10px 20px;
+            border-radius: 10px;
+            transition: background-color 0.2s;
+        }
+
+        #finishedButton:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        /* --- PERUBAHAN DI SINI --- */
+        #qrCode {
+            width: 150px; /* Ukuran diubah menjadi 150px */
+            height: 150px; /* Ukuran diubah menjadi 150px */
+            display: flex; /* Menggunakan flex untuk memusatkan gambar di dalamnya */
+            justify-content: center;
+            align-items: center;
+        }
+        #qrCode img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 8px; /* Sudut sedikit membulat untuk estetika */
+        }
+
+        /* =================================
+           4. TAMPILAN LOADING
+           ================================= */
+        .loading-container {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .loading-spinner {
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(0, 0, 0, 0.2);
+            border-top-color: #D9773B;
+            animation: spin 1s linear infinite;
+        }
+
+        .loading-text {
+            color: #333;
+            margin-top: 15px;
+            font-size: 1.2rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-container.hidden {
+            display: none;
+        }
+
+        /* =================================
+           5. PESAN STATUS
+           ================================= */
+        #statusMessage {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.6);
+            color: var(--text-color);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            z-index: 20;
+        }
+        #statusMessage.hidden {
+            display: none;
+        }
+
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Hasil Gambar Anda</h1>
-    <div id="loadingMessage">
-      <p>Sedang memproses gambar Anda, mohon tunggu...</p>
-      <img src="https://i.gifer.com/ZZ5H.gif" alt="Loading..." width="50">
+
+    <div class="result-container">
+        <div class="result-frame">
+            <img id="resultImage" src="#" alt="Foto AI Anda">
+            
+            <div id="loadingContainer" class="loading-container">
+                <div class="loading-spinner"></div>
+                <p class="loading-text">Memproses...</p>
+            </div>
+            
+            <div id="statusMessage" class="hidden"></div>
+        </div>
     </div>
 
-    <div id="resultContainer">
-      <p id="generationMessage" class="message"></p>
-      <img id="generatedImage" src="#" alt="Hasil Gambar Generate" style="display:block; margin-bottom: 15px;">
-      <div id="driveUploadStatus" class="message"></div>
-      <div id="qrCodeContainer">
-        <p style="font-weight: bold;">Kode QR:</p>
-        <img id="qrCodeImage" src="#" alt="Kode QR">
-      </div>
-      <div class="controls">
-        <button id="finishButton">Selesai</button>
-      </div>
+    <div class="result-footer">
+        <button id="finishedButton">SELESAI</button>
+        <div id="qrCode"></div>
     </div>
-  </div>
 
-  <script>
-    // Seluruh JavaScript di atasnya tetap sama...
-    const loadingMessageDiv = document.getElementById('loadingMessage');
-    const resultContainerDiv = document.getElementById('resultContainer');
-    const generatedImageEl = document.getElementById('generatedImage');
-    const generationMessageEl = document.getElementById('generationMessage');
-    const finishButton = document.getElementById('finishButton');
-    const API_BASE_URL = 'http://127.0.0.1:8000';
-    const driveUploadStatusEl = document.getElementById('driveUploadStatus');
-    const qrCodeContainerEl = document.getElementById('qrCodeContainer');
-    const qrCodeImageEl = document.getElementById('qrCodeImage');
-    
-    function dataURLtoBlob(dataurl) {
-      // ... implementasi fungsi tidak berubah
-      let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
-        bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
-      while (n--) { u8arr[n] = bstr.charCodeAt(n); }
-      return new Blob([u8arr], { type: mime });
-    }
+    <script>
+        const resultImage = document.getElementById('resultImage');
+        const finishedButton = document.getElementById('finishedButton');
+        const loadingContainer = document.getElementById('loadingContainer');
+        const statusMessage = document.getElementById('statusMessage');
+        const qrCodeContainer = document.getElementById('qrCode');
+        const API_BASE_URL = 'http://127.0.0.1:8000';
 
-    async function generateImage() {
-      // ... implementasi fungsi tidak berubah
-      const capturedImageDataUrl = sessionStorage.getItem('capturedImage');
-      const templateName = sessionStorage.getItem('selectedTemplateName');
-      driveUploadStatusEl.style.display = 'none';
-      driveUploadStatusEl.className = 'message';
-      qrCodeContainerEl.style.display = 'none'; 
-      qrCodeImageEl.src = '#';
-      if (!capturedImageDataUrl || !templateName) {
-        generationMessageEl.textContent = 'Data foto atau template tidak ditemukan. Silakan ulangi proses.';
-        generationMessageEl.className = 'message error';
-        loadingMessageDiv.style.display = 'none';
-        resultContainerDiv.style.display = 'block'; 
-        generatedImageEl.style.display = 'none';
-        finishButton.textContent = 'Kembali ke Awal';
-        return;
-      }
-      const imageBlob = dataURLtoBlob(capturedImageDataUrl);
-      const formData = new FormData();
-      formData.append('file', imageBlob, 'capture.png');
-      try {
-        const response = await fetch(`${API_BASE_URL}/generate-image-upload/${templateName}`, {
-          method: 'POST', body: formData
-        });
-        const data = await response.json();
-        loadingMessageDiv.style.display = 'none';
-        resultContainerDiv.style.display = 'block';
-        if (response.ok) {
-          generationMessageEl.textContent = data.message || 'Gambar berhasil digenerate!';
-          generationMessageEl.classList.add('success');
-          generatedImageEl.src = `data:image/png;base64,${data.generated_image_base64}`;
-          generatedImageEl.style.display = 'block';
-          if (data.google_drive_upload) {
-            const driveStatus = data.google_drive_upload;
-            driveUploadStatusEl.textContent = `Status Unggah Google Drive: ${driveStatus.detail}`;
-            driveUploadStatusEl.style.display = 'block';
-            if (driveStatus.status === "success") { driveUploadStatusEl.classList.add('success'); } 
-            else if (driveStatus.status === "failed") { driveUploadStatusEl.classList.add('error'); } 
-            else { driveUploadStatusEl.classList.add('info'); }
-            if (driveStatus.qr_code_base64) {
-              qrCodeImageEl.src = `data:image/png;base64,${driveStatus.qr_code_base64}`;
-              qrCodeContainerEl.style.display = 'block';
-            } else { qrCodeContainerEl.style.display = 'none'; }
-          }
-        } else {
-          generationMessageEl.textContent = `Gagal generate gambar: ${data.detail || response.statusText}`;
-          generationMessageEl.classList.add('error');
-          generatedImageEl.style.display = 'none';
-          driveUploadStatusEl.style.display = 'none';
+        function showStatus(message, isError = false) {
+            statusMessage.textContent = message;
+            statusMessage.classList.remove('hidden');
+            setTimeout(() => {
+                statusMessage.classList.add('hidden');
+            }, 3000);
         }
-      } catch (error) {
-        console.error('Error generating image or uploading to Drive:', error);
-        loadingMessageDiv.style.display = 'none';
-        resultContainerDiv.style.display = 'block';
-        generationMessageEl.textContent = `Terjadi kesalahan jaringan: ${error.message}`;
-        generationMessageEl.classList.add('error');
-        generatedImageEl.style.display = 'none';
-        driveUploadStatusEl.style.display = 'none';
-      }
-    }
 
-    finishButton.addEventListener('click', () => {
-      // Kosongkan session storage untuk pengguna berikutnya
-      sessionStorage.removeItem('capturedImage');
-      sessionStorage.removeItem('selectedTemplateName');
+        function dataURLtoBlob(dataURL) {
+            const arr = dataURL.split(',');
+            const mime = arr[0].match(/:(.*?);/)[1];
+            const bstr = atob(arr[1]);
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            while(n--){
+                u8arr[n] = bstr.charCodeAt(n);
+            }
+            return new Blob([u8arr], {type:mime});
+        }
 
-      // --- PERUBAHAN DI SINI ---
-      // Mengarahkan kembali ke halaman awal (play.html) untuk memulai dari awal
-      window.location.href = 'index.html'; 
-    });
+        async function generateImage() {
+            loadingContainer.classList.remove('hidden');
+            resultImage.style.display = 'none';
 
-    generateImage();
-  </script>
+            const capturedImageDataUrl = sessionStorage.getItem('capturedImage');
+            const templateName = sessionStorage.getItem('selectedTemplateName');
+
+            if (!capturedImageDataUrl || !templateName) {
+                showStatus("Error: Data gambar atau template tidak ditemukan.", true);
+                loadingContainer.classList.add('hidden');
+                setTimeout(() => window.location.href = 'user_take_photo.html', 2000);
+                return;
+            }
+
+            const imageBlob = dataURLtoBlob(capturedImageDataUrl);
+            const formData = new FormData();
+            formData.append('file', imageBlob, 'capture.png');
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/generate-image-upload/${templateName}`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || `Gagal memproses gambar: ${response.statusText}`);
+                }
+
+                resultImage.src = `data:image/png;base64,${data.generated_image_base64}`;
+                resultImage.style.display = 'block';
+
+                if (data.google_drive_upload && data.google_drive_upload.detail) {
+                    showStatus(data.google_drive_upload.detail);
+                }
+
+                if (data.google_drive_upload && data.google_drive_upload.qr_code_base64) {
+                    const qrImage = document.createElement('img');
+                    qrImage.src = `data:image/png;base64,${data.google_drive_upload.qr_code_base64}`;
+                    qrImage.alt = 'Kode QR untuk Google Drive';
+                    qrCodeContainer.innerHTML = '';
+                    qrCodeContainer.appendChild(qrImage);
+                }
+
+            } catch (error) {
+                console.error('Error generating image:', error);
+                showStatus(`Error: ${error.message}`, true);
+            } finally {
+                loadingContainer.classList.add('hidden');
+            }
+        }
+
+        finishedButton.addEventListener('click', () => {
+            sessionStorage.removeItem('capturedImage');
+            sessionStorage.removeItem('selectedTemplateName');
+            window.location.href = 'index.html';
+        });
+
+        generateImage();
+    </script>
 </body>
 </html>
