@@ -8,9 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        /* =================================
-           1. SETUP DASAR & VARIABEL (Konsisten dengan Dashboard)
-           ================================= */
+        /* CSS tidak berubah, tetap sama seperti sebelumnya */
         :root {
             --sidebar-bg: #FFFFFF;
             --main-bg: #F7F8FC;
@@ -18,90 +16,43 @@
             --primary-orange: #F58D3D;
             --text-dark: #252733;
             --text-gray: #9FA2B4;
+            --text-inactive: #4B5563;
             --border-color: #DFE0EB;
+            --success-bg: #29CC97;
             --font-family: 'Mulish', sans-serif;
         }
         *, *::before, *::after { box-sizing: border-box; }
         body { margin: 0; font-family: var(--font-family); background-color: var(--main-bg); color: var(--text-dark); font-size: 14px; }
-
-        /* =================================
-           2. LAYOUT UTAMA (Konsisten dengan Dashboard)
-           ================================= */
         .admin-layout { display: flex; min-height: 100vh; }
         .sidebar { width: 255px; background-color: var(--sidebar-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; flex-shrink: 0; }
         .main-content { flex-grow: 1; padding: 30px; }
-        .sidebar-header { padding: 30px; text-align: center; font-size: 1.2rem; font-weight: 700; letter-spacing: 0.3px; }
+        .sidebar-header { display: flex; align-items: center; gap: 16px; padding: 24px 30px; font-size: 1.2rem; font-weight: 700; letter-spacing: 0.3px; border-bottom: 1px solid var(--border-color); }
+        .sidebar-nav { padding: 16px; }
+        .sidebar-nav .nav-title { font-size: 0.75rem; text-transform: uppercase; color: var(--text-gray); font-weight: 700; padding: 8px 14px; margin-bottom: 8px; }
         .sidebar-nav ul { list-style: none; padding: 0; margin: 0; }
-        .sidebar-nav a { display: flex; align-items: center; padding: 18px 30px; text-decoration: none; color: var(--text-gray); font-weight: 600; border-left: 3px solid transparent; transition: all 0.2s ease-in-out; }
-        .sidebar-nav a:hover { background-color: var(--main-bg); color: var(--primary-orange); }
-        .sidebar-nav a.active { background-color: rgba(245, 141, 61, 0.08); color: var(--primary-orange); border-left-color: var(--primary-orange); }
-
-        /* =================================
-           3. KONTEN UTAMA & FORMULIR
-           ================================= */
+        .sidebar-nav a { display: flex; align-items: center; gap: 16px; padding: 12px 14px; margin-bottom: 4px; border-radius: 8px; text-decoration: none; color: var(--text-inactive); font-weight: 600; transition: all 0.2s ease-in-out; }
+        .sidebar-nav a:hover { background-color: #F3F4F6; }
+        .sidebar-nav a.active { background-color: var(--primary-orange); color: white; }
+        .sidebar-nav a.active:hover { background-color: #E8832E; }
+        .sidebar-nav svg { width: 20px; height: 20px; }
         .content-header h1 { font-size: 1.5rem; font-weight: 700; margin: 0 0 30px 0; }
-        .content-card { background-color: var(--card-bg); border-radius: 8px; border: 1px solid var(--border-color); padding: 30px; }
-        
-        .form-group {
-            margin-bottom: 25px;
-        }
-        .form-group label {
-            display: block;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-        .form-group label span {
-            color: var(--danger-color);
-        }
-        .form-group input[type="text"],
-        .form-group textarea {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            font-family: inherit;
-            font-size: 14px;
-        }
-        .form-group textarea {
-            min-height: 120px;
-            resize: vertical;
-        }
-
-        .form-actions {
-            display: flex;
-            gap: 15px;
-            margin-top: 20px;
-        }
-        .form-button {
-            padding: 10px 24px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 700;
-            cursor: pointer;
-            border: 1px solid transparent;
-        }
-        .form-button.primary {
-            background-color: var(--primary-orange);
-            color: white;
-            border-color: var(--primary-orange);
-        }
-        .form-button.secondary {
-            background-color: var(--card-bg);
-            color: var(--text-gray);
-            border-color: var(--border-color);
-        }
-
-        #imagePreviewContainer {
-            margin-top: 25px;
-            padding-top: 25px;
-            border-top: 1px solid var(--border-color);
-        }
-        #generatedImagePreview {
-            max-width: 300px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-        }
-        
+        .content-card { background-color: var(--card-bg); border-radius: 8px; border: 1px solid var(--border-color); padding: 30px; margin-bottom: 24px; }
+        .form-group { margin-bottom: 25px; }
+        .form-group:last-child { margin-bottom: 0; }
+        .form-group label { display: block; font-weight: 700; margin-bottom: 8px; }
+        .form-group label span { color: var(--danger-color); }
+        .form-group input[type="text"], .form-group textarea { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; font-size: 14px; }
+        .form-group textarea { min-height: 120px; resize: vertical; }
+        .form-actions-center { text-align: center; margin-bottom: 24px; }
+        .form-button { padding: 10px 24px; border-radius: 8px; font-size: 0.9rem; font-weight: 700; cursor: pointer; border: 1px solid transparent; }
+        .form-button.primary { background-color: var(--primary-orange); color: white; border-color: var(--primary-orange); }
+        .form-button.secondary { background-color: var(--card-bg); color: var(--text-gray); border-color: var(--border-color); }
+        #previewCard h2 { font-size: 1rem; color: var(--text-dark); margin-top: 0; margin-bottom: 20px; text-align: center; }
+        .preview-box { background: linear-gradient(180deg, rgba(20, 83, 45, 0.8) 0%, rgba(1, 22, 9, 0.8) 100%); border-radius: 8px; padding: 24px; text-align: center; }
+        .preview-banner { background-color: var(--success-bg); color: white; font-weight: 600; padding: 8px; border-radius: 4px; margin-bottom: 20px; display: none; }
+        #generatedImagePreview { max-width: 250px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 12px; }
+        .preview-status { color: white; font-size: 0.8rem; font-weight: 600; margin: 0; display: none; }
+        .final-actions { display: flex; justify-content: flex-end; gap: 15px; margin-top: 20px; }
         .message { margin-top: 20px; padding: 12px; border-radius: 8px; display:none; }
         .error { background-color: #f8d7da; color: #721c24; }
         .success { background-color: #d4edda; color: #155724; }
@@ -112,70 +63,67 @@
     <div class="admin-layout">
         <aside class="sidebar">
             <div class="sidebar-header">
-                AI Photobooth
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 18H21V16H3V18ZM3 13H21V11H3V13ZM3 6V8H21V6H3Z" fill="#4B5563"/></svg>
+                <span>AI Photobooth</span>
             </div>
             <nav class="sidebar-nav">
+                <h4 class="nav-title">Settings</h4>
                 <ul>
-                    <li><p style="padding: 0 30px 10px; color: var(--text-gray); font-size: 0.8rem; text-transform: uppercase;">Settings</p></li>
-                    <li><a href="admin_dashboard.html" class="active">Manage Template</a></li>
-                    <li><a href="admin_change_password.html">Setting Password</a></li>
-                    <li><a href="admin_setting_gdrive.html">Setting Google Drive</a></li>
-                    <li><a href="#" id="logoutButton">Logout Admin</a></li>
+                    <li><a href="admin_dashboard.html" class="active">
+                        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M7 2v11h3v9l7-12h-4l4-8z"></path></svg>
+                        <span>Manage Template</span>
+                    </a></li>
+                    <li><a href="admin_change_password.html">
+                        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"></path></svg>
+                        <span>Setting Password</span>
+                    </a></li>
+                    <li><a href="admin_setting_gdrive.html">
+                        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"></path></svg>
+                        <span>Setting Google Drive</span>
+                    </a></li>
+                    <li><a href="#" id="logoutButton">
+                        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M17 8l-1.41 1.41L17.17 11H9v2h8.17l-1.58 1.58L17 16l4-4L17 8z M5 5h7V3H5C3.9 3,3,3.9,3,5v14c0,1.1,0.9,2,2,2h7v-2H5V5z"></path></svg>
+                        <span>Logout Admin</span>
+                    </a></li>
                 </ul>
             </nav>
         </aside>
 
         <main class="main-content">
-            <div class="content-header">
-                <h1>Add New Template</h1>
-            </div>
-
-            <div class="content-card">
-                <form id="addTemplateForm">
-                    <div class="form-group">
-                        <label for="template_name">Template Name (without .json/.png) <span>*</span></label>
-                        <input type="text" id="template_name" name="template_name" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="template_promt">Prompt Template <span>*</span></label>
-                        <textarea id="template_promt" name="template_promt" required></textarea>
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="button" id="tryPromptButton" class="form-button primary">Try & Generate Preview Image</button>
-                    </div>
-
-                    <div id="imagePreviewContainer" style="display:none;">
-                        <p style="font-weight: 700;">Preview Image:</p>
+            <div class="content-header"><h1>Add New Template</h1></div>
+            <form id="addTemplateForm" novalidate>
+                <div class="content-card">
+                    <div class="form-group"><label for="template_name">Template Name (without .json/.png) <span>*</span></label><input type="text" id="template_name" name="template_name" placeholder="AI Ghibli Style" required></div>
+                    <div class="form-group"><label for="template_promt">Prompt Template <span>*</span></label><textarea id="template_promt" name="template_promt" required placeholder="A scenic, whimsical landscape in the style of Studio Ghibli..."></textarea></div>
+                </div>
+                <div class="form-actions-center"><button type="button" id="tryPromptButton" class="form-button primary">Try & Generate Preview Image</button></div>
+                <div id="previewCard" class="content-card" style="display:none;">
+                    <h2>Template Image Preview</h2>
+                    <div class="preview-box">
+                        <div class="preview-banner">Preview Image Successfully Generated</div>
                         <img id="generatedImagePreview" src="#" alt="Pratinjau Gambar">
+                        <p class="preview-status">Preview Image Successfully Generated</p>
                     </div>
-
-                    <hr style="border: none; border-top: 1px solid var(--border-color); margin: 30px 0;">
-
-                    <div class="form-actions">
-                        <button type="button" id="cancelButton" class="form-button secondary">Cancel</button>
-                        <button type="submit" id="submitButton" class="form-button primary">Add Template</button>
-                    </div>
-                </form>
-                <div id="message" class="message"></div>
-            </div>
+                </div>
+                <div class="final-actions">
+                    <button type="button" id="cancelButton" class="form-button secondary">Cancel</button>
+                    <button type="submit" id="submitButton" class="form-button primary">Add Template</button>
+                </div>
+            </form>
+            <div id="message" class="message"></div>
         </main>
     </div>
     
     <script>
-        // Fungsionalitas JavaScript dari file admin_add_template.html yang lama
-        // dapat disalin dan ditempel di sini tanpa perubahan karena semua ID elemen
-        // dan logika intinya tetap sama.
-
         const addTemplateForm = document.getElementById('addTemplateForm');
         const messageDiv = document.getElementById('message');
         const cancelButton = document.getElementById('cancelButton');
         const tryPromptButton = document.getElementById('tryPromptButton');
-        const imagePreviewContainer = document.getElementById('imagePreviewContainer');
-        const generatedImagePreview = document.getElementById('generatedImagePreview');
         const logoutButton = document.getElementById('logoutButton');
-        
+        const previewCard = document.getElementById('previewCard');
+        const previewBanner = previewCard.querySelector('.preview-banner');
+        const generatedImagePreview = document.getElementById('generatedImagePreview');
+        const previewStatus = previewCard.querySelector('.preview-status');
         const token = localStorage.getItem('adminToken');
         const API_BASE_URL = 'http://127.0.0.1:8000'; 
         let generatedTemplateImageBase64 = null;
@@ -187,27 +135,43 @@
             window.location.href = 'admin_login.html';
         }
 
-        function displayMessage(msg, type = 'success') {
+        function displayMessage(msg, type = 'error') {
             messageDiv.textContent = msg;
             messageDiv.className = `message ${type}`;
             messageDiv.style.display = 'block';
+            setTimeout(() => { messageDiv.style.display = 'none'; }, 4000);
         }
 
-        // Fungsi untuk konversi Data URL menjadi Blob
-        function base64ToBlob(base64, contentType = 'image/png', sliceSize = 512) {
-            const base64Data = base64.split(',')[1];
-            const byteCharacters = atob(base64Data);
-            const byteArrays = [];
-            for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
-                const slice = byteCharacters.slice(offset, offset + sliceSize);
-                const byteNumbers = new Array(slice.length);
-                for (let i = 0; i < slice.length; i++) {
-                    byteNumbers[i] = slice.charCodeAt(i);
+        /**
+         * [FUNGSI YANG DIPERBAIKI]
+         * Mengonversi string Base64 (baik mentah maupun Data URL) menjadi Blob.
+         */
+        function base64ToBlob(base64String, contentType = 'image/png', sliceSize = 512) {
+            // Cek apakah string input adalah Data URL, jika ya, ambil hanya data base64-nya.
+            // Jika tidak, asumsikan itu adalah data base64 mentah.
+            const base64Data = base64String.includes(',') 
+                ? base64String.split(',')[1] 
+                : base64String;
+
+            try {
+                const byteCharacters = atob(base64Data);
+                const byteArrays = [];
+                for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+                    const slice = byteCharacters.slice(offset, offset + sliceSize);
+                    const byteNumbers = new Array(slice.length);
+                    for (let i = 0; i < slice.length; i++) {
+                        byteNumbers[i] = slice.charCodeAt(i);
+                    }
+                    const byteArray = new Uint8Array(byteNumbers);
+                    byteArrays.push(byteArray);
                 }
-                const byteArray = new Uint8Array(byteNumbers);
-                byteArrays.push(byteArray);
+                return new Blob(byteArrays, {type: contentType});
+            } catch (e) {
+                // Tangkap error jika `atob` gagal (karena string tidak valid)
+                console.error("Gagal melakukan decode Base64:", e);
+                displayMessage("Data gambar pratinjau rusak atau tidak valid.", "error");
+                return null;
             }
-            return new Blob(byteArrays, {type: contentType});
         }
 
         logoutButton.addEventListener('click', (e) => { e.preventDefault(); handleUnauthorized(); });
@@ -215,39 +179,32 @@
 
         tryPromptButton.addEventListener('click', async () => {
             const template_promt = document.getElementById('template_promt').value.trim();
-            messageDiv.style.display = 'none';
-
             if (!template_promt) {
-                displayMessage('Prompt template cannot be empty.', 'error');
+                displayMessage('Prompt template tidak boleh kosong.', 'error');
                 return;
             }
-
             tryPromptButton.disabled = true;
             tryPromptButton.textContent = 'Generating...';
             generatedTemplateImageBase64 = null;
+            previewCard.style.display = 'none';
 
             const formData = new FormData();
             formData.append('template_prompt', template_promt);
 
             try {
-                const response = await fetch(`${API_BASE_URL}/try-template`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` },
-                    body: formData
-                });
+                const response = await fetch(`${API_BASE_URL}/try-template`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData });
                 if (response.status === 401) { handleUnauthorized(); return; }
                 const data = await response.json();
-
                 if (response.ok && data.generated_image_base64) {
-                    generatedTemplateImageBase64 = data.generated_image_base64;
+                    generatedTemplateImageBase64 = data.generated_image_base64; // Simpan data mentah
                     generatedImagePreview.src = `data:image/png;base64,${generatedTemplateImageBase64}`;
-                    imagePreviewContainer.style.display = 'block';
-                    displayMessage('Preview image generated successfully.');
+                    previewBanner.style.display = 'block';
+                    previewStatus.style.display = 'block';
+                    previewCard.style.display = 'block';
                 } else {
-                    throw new Error(data.detail || 'Failed to generate preview image.');
+                    throw new Error(data.detail || 'Gagal membuat gambar pratinjau.');
                 }
             } catch (error) {
-                generatedTemplateImageBase64 = null;
                 displayMessage(error.message, 'error');
             } finally {
                 tryPromptButton.disabled = false;
@@ -257,44 +214,38 @@
 
         addTemplateForm.addEventListener('submit', async function(event) {
             event.preventDefault();
-            messageDiv.style.display = 'none';
-
             const template_name = document.getElementById('template_name').value.trim();
             const template_promt = document.getElementById('template_promt').value.trim();
-            
             if (!template_name || !template_promt) {
-                displayMessage('Template name and prompt cannot be empty.', 'error');
+                displayMessage('Nama template dan prompt tidak boleh kosong.', 'error');
                 return;
             }
             if (!generatedTemplateImageBase64) {
-                displayMessage('You must generate a preview image first.', 'error');
+                displayMessage('Anda harus membuat gambar pratinjau terlebih dahulu.', 'error');
                 return;
             }
 
-            const imageBlob = base64ToBlob(generatedTemplateImageBase64, 'image/png');
-            const imageFile = new File([imageBlob], `${template_name}.png`, { type: 'image/png' });
+            const imageBlob = base64ToBlob(generatedTemplateImageBase64);
+            // Hentikan proses jika blob gagal dibuat
+            if (!imageBlob) {
+                return;
+            }
 
+            const imageFile = new File([imageBlob], `${template_name}.png`, { type: 'image/png' });
             const formData = new FormData();
             formData.append('template_name', template_name);
             formData.append('template_promt', template_promt);
             formData.append('template_image', imageFile);
 
             try {
-                const response = await fetch(`${API_BASE_URL}/add-template`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` },
-                    body: formData 
-                });
+                const response = await fetch(`${API_BASE_URL}/add-template`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData });
                 if (response.status === 401) { handleUnauthorized(); return; }
                 const data = await response.json();
-
                 if (response.ok) {
-                    displayMessage(data.message || 'Template added successfully.');
-                    setTimeout(() => {
-                        window.location.href = `admin_dashboard.html`;
-                    }, 1500);
+                    alert(data.message || 'Template berhasil ditambahkan!');
+                    window.location.href = `admin_dashboard.html`;
                 } else {
-                    throw new Error(data.detail || 'Failed to add template.');
+                    throw new Error(data.detail || 'Gagal menambahkan template.');
                 }
             } catch (error) {
                 displayMessage(error.message, 'error');
