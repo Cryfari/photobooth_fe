@@ -3,175 +3,428 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ambil Foto - Photobooth</title>
+    <title>Ambil Foto - AI Photobooth</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin-top: 20px; background-color: #eef; color: #333; }
-        .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.1); text-align: center; }
-        #videoContainer { border: 2px solid #ccc; margin-bottom: 15px; position: relative; width: 640px; height: 480px; background-color: #000;}
-        video { display: block; width: 100%; height: 100%;}
-        canvas { display: none; } /* Canvas disembunyikan, hanya untuk mengambil frame */
-        .controls { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-        .controls .timer-group { display: flex; align-items: center; gap: 8px; margin-bottom: 10px;}
-        .controls .timer-group label { font-weight: bold; }
-        .controls .timer-group select { padding: 8px; border-radius: 4px; border: 1px solid #ddd; }
-        .controls .action-buttons button { background-color: #007bff; color: white; padding: 10px 20px; margin: 0 5px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
-        .controls .action-buttons button:hover { background-color: #0056b3; }
-        .controls .action-buttons button:disabled { background-color: #ccc; cursor: not-allowed; }
-        #continueButton, #retakeButton { background-color: #28a745; }
-        #continueButton:hover, #retakeButton:hover { background-color: #218838; }
-        #retakeButton { background-color: #ffc107; color: #333;}
-        #retakeButton:hover { background-color: #e0a800;}
-        #photoPreview { margin-top:15px; border:1px solid #ddd; max-width: 320px; max-height: 240px; }
-        #countdownDisplay { font-size: 3em; color: red; margin-top: 10px; font-weight: bold; min-height: 1.2em; /* Ruang agar layout tidak bergeser */ }
-        .message { margin-top: 10px; color: red;}
+        /* =================================
+           1. SETUP DASAR & VARIABEL WARNA (THEMING)
+           ================================= */
+        :root {
+            --bg-color: #D9773B; /* Oranye dari desain */
+            --frame-bg-color: #FEFBF5; /* Warna krem/putih pada frame */
+            --text-color: #FFFFFF;
+            --icon-color: #FFFFFF;
+            --timer-active-color: #FFFFFF;
+            --timer-inactive-color: rgba(255, 255, 255, 0.6);
+            --font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        /* =================================
+           2. STRUKTUR UTAMA APLIKASI
+           ================================= */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .photobooth-app {
+            display: flex;
+            flex-direction: column;
+            width: 90vw;
+            height: 90vh;
+            max-width: 1000px;
+            max-height: 750px;
+        }
+
+        /* =================================
+           3. VIEWPORT (LAYAR VIDEO/FOTO)
+           ================================= */
+        .photobooth-viewport {
+            flex-grow: 1;
+            background-color: var(--frame-bg-color);
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        video, canvas, #photoPreview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        canvas {
+            display: none;
+        }
+
+        #countdownDisplay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: clamp(5rem, 15vw, 10rem);
+            font-weight: bold;
+            color: var(--bg-color);
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        /* =================================
+           4. KONTROL BAWAH
+           ================================= */
+        .photobooth-controls {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            height: 80px;
+        }
+        
+        .capture-controls, .preview-controls {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        /* Penataan untuk 3 kolom di bar kontrol capture */
+        .capture-controls > * {
+            flex: 1; /* Setiap anak elemen mengambil porsi yang sama */
+        }
+        .capture-controls .shutter-container {
+            display: flex;
+            justify-content: center;
+        }
+        .capture-controls .timer-options {
+            text-align: right;
+        }
+
+        .control-button {
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            color: var(--icon-color);
+        }
+        
+        .control-button svg {
+            width: 50px;
+            height: 38px;
+            fill: currentColor;
+            transition: transform 0.2s ease;
+        }
+        
+        .control-button:hover svg {
+            transform: scale(1.1);
+        }
+
+        .timer-options, .next-option {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .timer-options button {
+            color: var(--timer-inactive-color);
+            margin-left: 15px;
+            font-size: inherit;
+            font-weight: inherit;
+        }
+        
+        .timer-options button.selected {
+            color: var(--timer-active-color);
+            text-decoration: underline;
+        }
+
+        #nextButton {
+             font-size: inherit;
+             font-weight: inherit;
+             color: var(--text-color);
+        }
+
+        /* [BARU] Styling untuk Dropdown Pilih Kamera */
+        .camera-selector {
+            text-align: left;
+        }
+        #cameraSelect {
+            background-color: transparent;
+            color: var(--text-color);
+            border: 2px solid var(--timer-inactive-color);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.9rem;
+            max-width: 180px; /* Batasi lebar agar tidak terlalu panjang */
+        }
+        #cameraSelect:focus {
+            outline: none;
+            border-color: var(--text-color);
+        }
+        #cameraSelect option {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        /* [BARU] Kelas utilitas untuk menyembunyikan elemen */
+        .hidden {
+            display: none !important;
+        }
+
+        /* =================================
+           5. MANAJEMEN STATE DENGAN CSS
+           ================================= */
+        .photobooth-app.state-capture .preview-controls { display: none; }
+        .photobooth-app.state-capture .capture-controls { display: flex; }
+        .photobooth-app.state-capture #photoPreview { display: none; }
+        .photobooth-app.state-capture #videoElement { display: block; }
+        
+        .photobooth-app.state-preview .capture-controls { display: none; }
+        .photobooth-app.state-preview .preview-controls { display: flex; }
+        .photobooth-app.state-preview #photoPreview { display: block; }
+        .photobooth-app.state-preview #videoElement { display: none; }
+        .photobooth-app.state-preview #countdownDisplay { display: none; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Ambil Foto Anda</h1>
-        <div id="videoContainer">
-            <video id="videoElement" autoplay playsinline></video>
-        </div>
-        <canvas id="canvasElement"></canvas>
-        <p id="countdownDisplay"></p> 
-        <img id="photoPreview" src="#" alt="Pratinjau Foto" style="display:none;">
+
+    <main id="mainApp" class="photobooth-app state-capture">
         
-        <div class="controls">
-            <div class="timer-group">
-                <label for="timerSelect">Timer:</label>
-                <select id="timerSelect">
-                    <option value="0">Tanpa Timer</option>
-                    <option value="3">3 Detik</option>
-                    <option value="5">5 Detik</option>
-                    <option value="10">10 Detik</option>
-                </select>
+        <div class="photobooth-viewport">
+            <video id="videoElement" autoplay playsinline></video>
+            <canvas id="canvasElement"></canvas>
+            <img id="photoPreview" src="#" alt="Pratinjau Foto Anda">
+            <p id="countdownDisplay"></p>
+        </div>
+        
+        <div class="photobooth-controls">
+            <div class="capture-controls">
+                <div class="camera-selector">
+                    <select id="cameraSelect" class="hidden" aria-label="Pilih Kamera"></select>
+                </div>
+
+                <div class="shutter-container">
+                    <button id="shutterButton" class="control-button" aria-label="Ambil Foto">
+                        <svg width="101" height="97" viewBox="0 0 101 97" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M96.7916 76.7917C96.7916 78.9355 95.9048 80.9915 94.3264 82.5074C92.748 84.0234 90.6072 84.875 88.3749 84.875H12.6249C10.3927 84.875 8.25187 84.0234 6.67344 82.5074C5.09501 80.9915 4.20825 78.9355 4.20825 76.7917V32.3333C4.20825 30.1895 5.09501 28.1335 6.67344 26.6176C8.25187 25.1016 10.3927 24.25 12.6249 24.25H29.4583L37.8749 12.125H63.1249L71.5416 24.25H88.3749C90.6072 24.25 92.748 25.1016 94.3264 26.6176C95.9048 28.1335 96.7916 30.1895 96.7916 32.3333V76.7917Z" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M50.4999 68.7083C59.7967 68.7083 67.3332 61.4703 67.3332 52.5417C67.3332 43.6131 59.7967 36.375 50.4999 36.375C41.2031 36.375 33.6666 43.6131 33.6666 52.5417C33.6666 61.4703 41.2031 68.7083 50.4999 68.7083Z" stroke="grey" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+
+                    </button>
+                </div>
+
+                <div class="timer-options">
+                    <button id="timer0s" class="control-button selected">0s</button>
+                    <button id="timer3s" class="control-button">3s</button>
+                    <button id="timer5s" class="control-button">5s</button>
+                </div>
             </div>
-            <div class="action-buttons">
-                <button id="shutterButton">Ambil Foto</button>
-                <button id="retakeButton" style="display:none;">Ulang Foto</button>
-                <button id="continueButton" style="display:none;" disabled>Lanjutkan</button>
+
+            <div class="preview-controls">
+                <button id="retakeButton" class="control-button" aria-label="Ulang Foto">
+                     <svg viewBox="0 0 24 24"><path d="M20.49 13.5c-.38.75-.89 1.43-1.52 2.02-.63.59-1.35 1.07-2.14 1.43-.79.36-1.65.57-2.55.57-1.11 0-2.17-.28-3.12-.82s-1.78-1.3-2.46-2.23l.99-.99c.6.81 1.33 1.45 2.18 1.91s1.79.7 2.81.7c.73 0 1.4-.18 2.02-.53s1.14-.85 1.56-1.48c.42-.62.63-1.33.63-2.12 0-.8-.21-1.5-.63-2.1s-.96-1.07-1.62-1.42c-.66-.35-1.39-.52-2.19-.52H14.2l1.4 1.4-1.2 1.2-3.6-3.6 3.6-3.6 1.2 1.2-1.4 1.4h2.29c.95 0 1.83.21 2.66.62s1.53.99 2.1 1.71c.57.72.95 1.57 1.14 2.52.19.95.19 1.95 0 2.95z"/></svg>
+                </button>
+                <button id="nextButton" class="control-button">NEXT</button>
             </div>
         </div>
-        <p id="message" class="message"></p>
-    </div>
+
+    </main>
 
     <script>
+        // =================================
+        // 1. SELEKSI ELEMEN DOM
+        // =================================
+        const mainApp = document.getElementById('mainApp');
         const video = document.getElementById('videoElement');
         const canvas = document.getElementById('canvasElement');
         const photoPreview = document.getElementById('photoPreview');
+        const countdownDisplay = document.getElementById('countdownDisplay');
+        const cameraSelect = document.getElementById('cameraSelect'); // [BARU]
+        
         const shutterButton = document.getElementById('shutterButton');
         const retakeButton = document.getElementById('retakeButton');
-        const continueButton = document.getElementById('continueButton');
-        const timerSelect = document.getElementById('timerSelect');
-        const countdownDisplay = document.getElementById('countdownDisplay');
-        const messageEl = document.getElementById('message');
-        let stream;
-        let countdownInterval = null; // Untuk menyimpan ID interval hitungan mundur
+        const nextButton = document.getElementById('nextButton');
 
-        // Fungsi untuk melakukan pengambilan gambar
+        const timerButtons = {
+            '0': document.getElementById('timer0s'),
+            '3': document.getElementById('timer3s'),
+            '5': document.getElementById('timer5s'),
+        };
+
+        // =================================
+        // 2. MANAJEMEN STATE APLIKASI
+        // =================================
+        let stream;
+        let countdownInterval = null;
+        let timerDuration = 0;
+
+        // =================================
+        // 3. FUNGSI INTI
+        // =================================
+
+        /**
+         * [BARU] Mendeteksi semua kamera yang tersedia dan mengisinya ke dropdown.
+         */
+        async function populateCameraList() {
+            try {
+                // Minta izin dulu agar bisa mendapatkan label kamera
+                await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                
+                cameraSelect.innerHTML = ''; // Kosongkan daftar sebelumnya
+                videoDevices.forEach((device, index) => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    // Beri nama default jika label tidak tersedia
+                    option.text = device.label || `Kamera ${index + 1}`;
+                    cameraSelect.appendChild(option);
+                });
+
+                // Tampilkan dropdown hanya jika ada lebih dari 1 kamera
+                if (videoDevices.length > 1) {
+                    cameraSelect.classList.remove('hidden');
+                }
+
+            } catch(err) {
+                console.error("Tidak bisa mendapatkan daftar perangkat media.", err);
+            }
+        }
+
+        /**
+         * [DIMODIFIKASI] Memulai webcam berdasarkan deviceId yang dipilih.
+         * @param {string} deviceId - ID dari kamera yang ingin digunakan.
+         */
+        async function startWebcam(deviceId) {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
+            countdownDisplay.textContent = '';
+            
+            // Hentikan stream lama jika ada
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+
+            // Buat constraints baru dengan deviceId yang spesifik
+            const constraints = {
+                video: {
+                    deviceId: deviceId ? { exact: deviceId } : undefined,
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                },
+                audio: false
+            };
+            
+            try {
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+                mainApp.className = 'photobooth-app state-capture';
+            } catch (err) {
+                console.error("Error accessing webcam: ", err);
+                countdownDisplay.textContent = "Error: Webcam tidak ditemukan.";
+            }
+        }
+
         function performCapture() {
+            // ... (Fungsi ini tidak berubah)
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             const context = canvas.getContext('2d');
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
             const imageDataUrl = canvas.toDataURL('image/png');
             photoPreview.src = imageDataUrl;
-            photoPreview.style.display = 'block';
-            video.style.display = 'none'; 
-
             sessionStorage.setItem('capturedImage', imageDataUrl);
-
-            shutterButton.style.display = 'none';
-            timerSelect.disabled = true; // Nonaktifkan pilihan timer setelah foto diambil
-            retakeButton.style.display = 'inline-block';
-            continueButton.style.display = 'inline-block';
-            continueButton.disabled = false;
-
+            mainApp.className = 'photobooth-app state-preview';
             if (stream) { 
                 stream.getTracks().forEach(track => track.stop());
             }
         }
 
-        async function startWebcam() {
-            messageEl.textContent = '';
-            countdownDisplay.textContent = ''; // Bersihkan hitungan mundur
-            if (countdownInterval) {
-                clearInterval(countdownInterval);
-                countdownInterval = null;
-            }
-            try {
-                if (stream) {
-                    stream.getTracks().forEach(track => track.stop());
-                }
-                stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false });
-                video.srcObject = stream;
-                video.style.display = 'block';
-                photoPreview.style.display = 'none';
-                shutterButton.style.display = 'inline-block';
-                shutterButton.disabled = false; // Aktifkan tombol shutter
-                timerSelect.disabled = false; // Aktifkan pilihan timer
-                retakeButton.style.display = 'none';
-                continueButton.style.display = 'none';
-                continueButton.disabled = true;
-            } catch (err) {
-                console.error("Error accessing webcam: ", err);
-                messageEl.textContent = "Tidak bisa mengakses webcam. Pastikan Anda memberikan izin.";
-            }
-        }
-
-        shutterButton.addEventListener('click', () => {
-            const timerDuration = parseInt(timerSelect.value, 10);
-            
-            shutterButton.disabled = true; // Nonaktifkan tombol shutter segera
-            timerSelect.disabled = true; // Nonaktifkan pilihan timer selama proses
-
+        function startCountdown() {
+            // ... (Fungsi ini tidak berubah)
+            shutterButton.disabled = true;
+            Object.values(timerButtons).forEach(btn => btn.disabled = true);
             if (timerDuration > 0) {
                 let count = timerDuration;
                 countdownDisplay.textContent = count;
-                
                 countdownInterval = setInterval(() => {
                     count--;
                     if (count > 0) {
                         countdownDisplay.textContent = count;
                     } else {
-                        countdownDisplay.textContent = 'Smile!'; // Atau teks lain
+                        countdownDisplay.textContent = '📸';
                         clearInterval(countdownInterval);
                         countdownInterval = null;
-                        // Tambahkan jeda singkat agar pengguna sempat melihat "Smile!"
                         setTimeout(() => {
-                            countdownDisplay.textContent = ''; // Bersihkan setelah ambil
                             performCapture();
-                        }, 500); // Jeda 0.5 detik
+                            shutterButton.disabled = false;
+                            Object.values(timerButtons).forEach(btn => btn.disabled = false);
+                        }, 500);
                     }
                 }, 1000);
             } else {
-                // Tanpa timer, langsung ambil foto
                 performCapture();
+                shutterButton.disabled = false;
+                Object.values(timerButtons).forEach(btn => btn.disabled = false);
             }
-        });
+        }
 
+        // =================================
+        // 4. EVENT LISTENERS
+        // =================================
+
+        // [BARU] Listener untuk dropdown kamera
+        cameraSelect.addEventListener('change', (event) => {
+            startWebcam(event.target.value);
+        });
+        
+        // ... (Listener lainnya tidak berubah)
+        shutterButton.addEventListener('click', startCountdown);
         retakeButton.addEventListener('click', () => {
-            if (countdownInterval) { // Jika ada timer berjalan, hentikan
-                clearInterval(countdownInterval);
-                countdownInterval = null;
-            }
-            countdownDisplay.textContent = ''; // Bersihkan tampilan hitungan mundur
             sessionStorage.removeItem('capturedImage');
-            // Tidak perlu mengatur ulang shutterButton.disabled atau timerSelect.disabled di sini
-            // karena akan diatur oleh startWebcam()
-            startWebcam(); 
+            startWebcam(cameraSelect.value); // Mulai lagi dengan kamera yang terakhir dipilih
         });
-
-        continueButton.addEventListener('click', () => {
+        nextButton.addEventListener('click', () => {
             if (sessionStorage.getItem('capturedImage')) {
                 window.location.href = 'user_templates.html';
-            } else {
-                messageEl.textContent = "Ambil foto terlebih dahulu sebelum melanjutkan.";
             }
         });
+        Object.entries(timerButtons).forEach(([duration, button]) => {
+            button.addEventListener('click', () => {
+                timerDuration = parseInt(duration, 10);
+                Object.values(timerButtons).forEach(btn => btn.classList.remove('selected'));
+                button.classList.add('selected');
+            });
+        });
 
-        startWebcam();
+        // =================================
+        // 5. INISIALISASI
+        // =================================
+        /**
+         * [BARU] Fungsi inisialisasi utama untuk mengatur alur.
+         */
+        async function init() {
+            await populateCameraList(); // Isi daftar kamera terlebih dahulu
+            startWebcam(cameraSelect.value); // Mulai webcam dengan kamera pertama di daftar
+        }
+
+        init(); // Panggil fungsi inisialisasi saat halaman dimuat
     </script>
 </body>
 </html>
