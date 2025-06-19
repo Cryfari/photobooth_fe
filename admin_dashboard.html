@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <style>
+        /* ... (CSS yang sudah ada tetap sama) ... */
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin-top: 50px; background-color: #f4f4f4; color: #333; }
+        .container { background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 600px;}
+        h1 { color: #333; }
+        .buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+        .buttons button { background-color: #007bff; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; width: 200px; }
+        .buttons button:hover { background-color: #0056b3; }
+        #logoutButton { background-color: #dc3545; margin-top: 20px; }
+        #logoutButton:hover { background-color: #c82333; }
+        .message { margin-top: 15px; padding: 10px; border-radius: 4px; text-align: center; word-wrap: break-word; max-width: 90%;}
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        #folderIdSection { margin-top: 25px; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #f9f9f9; display: none; }
+        #folderIdSection h3 { margin-top: 0; color: #333; }
+        #folderIdSection label { display: block; margin-bottom: 5px; font-weight: bold; text-align: left;}
+        #folderIdSection input[type="text"] { width: calc(100% - 22px); padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px;}
+        #folderIdSection button { background-color: #5cb85c; color: white; padding: 10px 15px; width: auto; }
+        #folderIdSection button:hover { background-color: #4cae4c; }
+        #currentFolderIdDisplay { font-weight: normal; color: #555; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Admin Dashboard</h1>
+        <div id="googleStatusMessage" class="message" style="display:none;"></div>
+        <div class="buttons">
+            <button onclick="window.location.href='admin_change_password.html'">Ubah Password</button>
+            <button id="googleLoginButton" style="display:none;">Login dengan Google</button>
+            <button id="googleLogoutButton" style="display:none;">Logout dari Google</button>
+            <button onclick="window.location.href='admin_add_template.html'">Tambah Template</button>
+            <button onclick="window.location.href='admin_manage_templates.html'">Kelola Template</button> 
+        </div>
+        
+        <div id="folderIdSection">
+            <h3>Pengaturan Folder Google Drive</h3>
+            <p>Folder ID Saat Ini: <strong id="currentFolderIdDisplay">- Belum Diatur -</strong></p>
+            <div>
+                <label for="folderIdInput">Masukkan Folder ID Baru:</label>
+                <input type="text" id="folderIdInput" placeholder="Contoh: 1aBcDeFgHiJkLmNoPqRsXYZ">
+            </div>
+            <button id="saveFolderIdButton">Simpan Folder ID</button>
+            <div id="folderIdMessage" class="message" style="display:none; margin-top:10px;"></div>
+        </div>
+
+        <button id="logoutButton">Logout Admin</button>
+    </div>
+
+    <script>
+        // ... (JavaScript yang sudah ada sebelumnya tetap di sini, tidak perlu diubah untuk penambahan tombol ini) ...
+        const token = localStorage.getItem('adminToken'); // Pastikan didefinisikan jika belum
+        const API_BASE_URL = 'http://127.0.0.1:8000'; // Pastikan didefinisikan
+        // Fungsi handleUnauthorized, checkGoogleLoginStatus, dll. tetap ada
+        // ... (seluruh JavaScript sebelumnya) ...
+         if (!token) { window.location.href = 'admin_login.html'; } // Pengecekan token dasar
+
+        function handleUnauthorized() { /* ... definisi ... */ 
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('googleAuthStatus');
+            document.getElementById('folderIdSection').style.display = 'none';
+            window.location.href = 'admin_login.html';
+        }
+        function updateGoogleButtonVisibility(isLoggedIn) { /* ... definisi ... */
+            const googleLoginButton = document.getElementById('googleLoginButton');
+            const googleLogoutButton = document.getElementById('googleLogoutButton');
+            const folderIdSection = document.getElementById('folderIdSection');
+            if (isLoggedIn) {
+                googleLoginButton.style.display = 'none';
+                googleLogoutButton.style.display = 'inline-block';
+                folderIdSection.style.display = 'block';
+            } else {
+                googleLoginButton.style.display = 'inline-block';
+                googleLogoutButton.style.display = 'none';
+                folderIdSection.style.display = 'none';
+                document.getElementById('currentFolderIdDisplay').textContent = '- Belum Diatur -';
+                document.getElementById('folderIdInput').value = '';
+            }
+        }
+        async function checkGoogleLoginStatus() { /* ... definisi ... */ 
+            const googleStatusMessageDiv = document.getElementById('googleStatusMessage');
+            const folderIdMessage = document.getElementById('folderIdMessage');
+            googleStatusMessageDiv.style.display = 'none';
+            googleStatusMessageDiv.className = 'message';
+            folderIdMessage.style.display = 'none'; 
+            try {
+                const response = await fetch(`${API_BASE_URL}/google-drive/status`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.status === 401) { handleUnauthorized(); return; }
+                const data = await response.json();
+                if (response.ok) {
+                    updateGoogleButtonVisibility(data.is_logged_in);
+                    localStorage.setItem('googleAuthStatus', data.is_logged_in ? 'loggedIn' : 'loggedOut');
+                    googleStatusMessageDiv.textContent = data.message;
+                    googleStatusMessageDiv.classList.add(data.is_logged_in ? (data.refreshed_during_check ? 'info' : 'success') : 'info');
+                    if (data.is_logged_in) {
+                        document.getElementById('currentFolderIdDisplay').textContent = data.drive_folder_id || '- Belum Diatur -';
+                    }
+                } else {
+                    updateGoogleButtonVisibility(false);
+                    localStorage.setItem('googleAuthStatus', 'loggedOut');
+                    googleStatusMessageDiv.textContent = data.detail || "Gagal memeriksa status Google Drive.";
+                    googleStatusMessageDiv.classList.add('error');
+                }
+            } catch (error) {
+                updateGoogleButtonVisibility(false);
+                localStorage.setItem('googleAuthStatus', 'loggedOut');
+                googleStatusMessageDiv.textContent = 'Kesalahan jaringan saat memeriksa status Google Drive.';
+                googleStatusMessageDiv.classList.add('error');
+            }
+            googleStatusMessageDiv.style.display = 'block';
+        }
+        // Panggilan checkGoogleLoginStatus dan logika parameter URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirectMessage = urlParams.get('message');
+        const redirectError = urlParams.get('error');
+        const action = urlParams.get('action');
+
+        if ((action === 'add_template_success' || action === 'manage_template_action') && redirectMessage) {
+            document.getElementById('googleStatusMessage').textContent = decodeURIComponent(redirectMessage);
+            document.getElementById('googleStatusMessage').classList.add(redirectError ? 'error' : 'success');
+            document.getElementById('googleStatusMessage').style.display = 'block';
+            window.history.replaceState({}, document.title, window.location.pathname);
+            if (action !== 'add_template_success') checkGoogleLoginStatus(); // Jangan panggil ganda jika baru dari add_template
+            else if(action === 'add_template_success' && !document.getElementById('googleLoginButton')) { // Jika elemen google ada
+                 // Ini berarti checkGoogleLoginStatus sudah pernah dipanggil, cukup tampilkan pesan
+            } else {
+                checkGoogleLoginStatus();
+            }
+        } else if (redirectMessage) { 
+            document.getElementById('googleStatusMessage').textContent = decodeURIComponent(redirectMessage);
+            document.getElementById('googleStatusMessage').classList.add(redirectError ? 'error' : 'success');
+            document.getElementById('googleStatusMessage').style.display = 'block';
+            window.history.replaceState({}, document.title, window.location.pathname);
+            checkGoogleLoginStatus(); 
+        } else {
+            checkGoogleLoginStatus();
+        }
+
+        // Event listeners untuk tombol Google & Simpan Folder ID (tidak berubah)
+        document.getElementById('googleLoginButton').addEventListener('click', async () => { /* ... implementasi ... */ 
+             const googleStatusMessageDiv = document.getElementById('googleStatusMessage');
+             googleStatusMessageDiv.style.display = 'none';
+            try {
+                const response = await fetch(`${API_BASE_URL}/google-drive/get-auth-url`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.status === 401) { handleUnauthorized(); return; }
+                const data = await response.json();
+                if (response.ok) {
+                    if (data.authorization_url) { window.location.href = data.authorization_url; } 
+                    else {
+                        googleStatusMessageDiv.textContent = 'URL otorisasi tidak diterima.';
+                        googleStatusMessageDiv.classList.add('error');
+                        googleStatusMessageDiv.style.display = 'block';
+                    }
+                } else {
+                    googleStatusMessageDiv.textContent = `Gagal memulai login Google: ${data.detail || response.statusText}`;
+                    googleStatusMessageDiv.classList.add('error');
+                    googleStatusMessageDiv.style.display = 'block';
+                }
+            } catch (error) {
+                googleStatusMessageDiv.textContent = 'Kesalahan jaringan (Google Login).';
+                googleStatusMessageDiv.classList.add('error');
+                googleStatusMessageDiv.style.display = 'block';
+            }
+        });
+        document.getElementById('googleLogoutButton').addEventListener('click', async () => { /* ... implementasi ... */ 
+            const googleStatusMessageDiv = document.getElementById('googleStatusMessage');
+            const folderIdMessage = document.getElementById('folderIdMessage');
+            googleStatusMessageDiv.style.display = 'none';
+            folderIdMessage.style.display = 'none';
+            try {
+                const response = await fetch(`${API_BASE_URL}/google-drive/logout`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.status === 401) { handleUnauthorized(); return; }
+                const data = await response.json();
+                if (response.ok) {
+                    googleStatusMessageDiv.textContent = data.message || 'Logout Google berhasil.';
+                    googleStatusMessageDiv.classList.add('success');
+                } else {
+                    googleStatusMessageDiv.textContent = `Gagal logout Google: ${data.detail || response.statusText}`;
+                    googleStatusMessageDiv.classList.add('error');
+                }
+            } catch (error) {
+                googleStatusMessageDiv.textContent = 'Kesalahan jaringan (Google Logout).';
+                googleStatusMessageDiv.classList.add('error');
+            }
+            googleStatusMessageDiv.style.display = 'block';
+            await checkGoogleLoginStatus(); 
+        });
+        document.getElementById('saveFolderIdButton').addEventListener('click', async () => { /* ... implementasi ... */
+            const folderIdInput = document.getElementById('folderIdInput');
+            const folderIdMessage = document.getElementById('folderIdMessage');
+            const currentFolderIdDisplay = document.getElementById('currentFolderIdDisplay');
+
+            const folderId = folderIdInput.value.trim();
+            folderIdMessage.style.display = 'none';
+            folderIdMessage.className = 'message';
+            if (!folderId) {
+                folderIdMessage.textContent = 'Folder ID tidak boleh kosong.';
+                folderIdMessage.classList.add('error');
+                folderIdMessage.style.display = 'block';
+                return;
+            }
+            try {
+                const response = await fetch(`${API_BASE_URL}/google-drive/set-folder-id`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
+                    body: JSON.stringify({ folder_id: folderId })
+                });
+                if (response.status === 401) { handleUnauthorized(); return; }
+                const data = await response.json();
+                if (response.ok) {
+                    folderIdMessage.textContent = data.message || 'Folder ID disimpan.';
+                    folderIdMessage.classList.add('success');
+                    currentFolderIdDisplay.textContent = data.folder_id || folderId;
+                    folderIdInput.value = ''; 
+                } else {
+                    folderIdMessage.textContent = data.detail || 'Gagal simpan Folder ID.';
+                    folderIdMessage.classList.add('error');
+                }
+            } catch (error) {
+                folderIdMessage.textContent = 'Kesalahan jaringan (Simpan Folder ID).';
+                folderIdMessage.classList.add('error');
+            }
+            folderIdMessage.style.display = 'block';
+        });
+         document.getElementById('logoutButton').addEventListener('click', () => {
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('googleAuthStatus');
+            window.location.href = 'admin_login.html';
+        });
+
+    </script>
+</body>
+</html>

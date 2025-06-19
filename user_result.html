@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hasil Gambar - Photobooth</title>
+  <style>
+    /* CSS tetap sama, tidak ada perubahan */
+    body {
+      font-family: sans-serif; display: flex; flex-direction: column;
+      align-items: center; margin-top: 20px; background-color: #eef; color: #333;
+    }
+    .container {
+      background-color: #fff; padding: 20px; border-radius: 8px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1); text-align: center;
+      width: 90%; max-width: 700px;
+    }
+    h1 { color: #333; }
+    #loadingMessage { font-size: 1.2em; color: #007bff; }
+    #resultContainer { display: none; }
+    #generatedImage {
+      max-width: 100%; height: auto; border: 1px solid #ddd;
+      margin-bottom: 15px; border-radius: 4px;
+    }
+    .controls button {
+      background-color: #28a745; color: white; padding: 10px 20px;
+      border: none; border-radius: 5px; cursor: pointer; font-size: 16px;
+    }
+    .controls button:hover { background-color: #218838; }
+    .message { margin-top: 10px; font-weight: bold; }
+    .error { color: red; }
+    .success { color: green; }
+    #driveUploadStatus { margin-top: 10px; padding: 10px; border-radius: 4px; display:none; }
+    #qrCodeContainer { margin-top: 20px; display:none; }
+    #qrCodeImage { max-width: 200px; height: auto; border: 1px solid #ddd; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Hasil Gambar Anda</h1>
+    <div id="loadingMessage">
+      <p>Sedang memproses gambar Anda, mohon tunggu...</p>
+      <img src="https://i.gifer.com/ZZ5H.gif" alt="Loading..." width="50">
+    </div>
+
+    <div id="resultContainer">
+      <p id="generationMessage" class="message"></p>
+      <img id="generatedImage" src="#" alt="Hasil Gambar Generate" style="display:block; margin-bottom: 15px;">
+      <div id="driveUploadStatus" class="message"></div>
+      <div id="qrCodeContainer">
+        <p style="font-weight: bold;">Kode QR:</p>
+        <img id="qrCodeImage" src="#" alt="Kode QR">
+      </div>
+      <div class="controls">
+        <button id="finishButton">Selesai</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Seluruh JavaScript di atasnya tetap sama...
+    const loadingMessageDiv = document.getElementById('loadingMessage');
+    const resultContainerDiv = document.getElementById('resultContainer');
+    const generatedImageEl = document.getElementById('generatedImage');
+    const generationMessageEl = document.getElementById('generationMessage');
+    const finishButton = document.getElementById('finishButton');
+    const API_BASE_URL = 'http://127.0.0.1:8000';
+    const driveUploadStatusEl = document.getElementById('driveUploadStatus');
+    const qrCodeContainerEl = document.getElementById('qrCodeContainer');
+    const qrCodeImageEl = document.getElementById('qrCodeImage');
+    
+    function dataURLtoBlob(dataurl) {
+      // ... implementasi fungsi tidak berubah
+      let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+        bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+      while (n--) { u8arr[n] = bstr.charCodeAt(n); }
+      return new Blob([u8arr], { type: mime });
+    }
+
+    async function generateImage() {
+      // ... implementasi fungsi tidak berubah
+      const capturedImageDataUrl = sessionStorage.getItem('capturedImage');
+      const templateName = sessionStorage.getItem('selectedTemplateName');
+      driveUploadStatusEl.style.display = 'none';
+      driveUploadStatusEl.className = 'message';
+      qrCodeContainerEl.style.display = 'none'; 
+      qrCodeImageEl.src = '#';
+      if (!capturedImageDataUrl || !templateName) {
+        generationMessageEl.textContent = 'Data foto atau template tidak ditemukan. Silakan ulangi proses.';
+        generationMessageEl.className = 'message error';
+        loadingMessageDiv.style.display = 'none';
+        resultContainerDiv.style.display = 'block'; 
+        generatedImageEl.style.display = 'none';
+        finishButton.textContent = 'Kembali ke Awal';
+        return;
+      }
+      const imageBlob = dataURLtoBlob(capturedImageDataUrl);
+      const formData = new FormData();
+      formData.append('file', imageBlob, 'capture.png');
+      try {
+        const response = await fetch(`${API_BASE_URL}/generate-image-upload/${templateName}`, {
+          method: 'POST', body: formData
+        });
+        const data = await response.json();
+        loadingMessageDiv.style.display = 'none';
+        resultContainerDiv.style.display = 'block';
+        if (response.ok) {
+          generationMessageEl.textContent = data.message || 'Gambar berhasil digenerate!';
+          generationMessageEl.classList.add('success');
+          generatedImageEl.src = `data:image/png;base64,${data.generated_image_base64}`;
+          generatedImageEl.style.display = 'block';
+          if (data.google_drive_upload) {
+            const driveStatus = data.google_drive_upload;
+            driveUploadStatusEl.textContent = `Status Unggah Google Drive: ${driveStatus.detail}`;
+            driveUploadStatusEl.style.display = 'block';
+            if (driveStatus.status === "success") { driveUploadStatusEl.classList.add('success'); } 
+            else if (driveStatus.status === "failed") { driveUploadStatusEl.classList.add('error'); } 
+            else { driveUploadStatusEl.classList.add('info'); }
+            if (driveStatus.qr_code_base64) {
+              qrCodeImageEl.src = `data:image/png;base64,${driveStatus.qr_code_base64}`;
+              qrCodeContainerEl.style.display = 'block';
+            } else { qrCodeContainerEl.style.display = 'none'; }
+          }
+        } else {
+          generationMessageEl.textContent = `Gagal generate gambar: ${data.detail || response.statusText}`;
+          generationMessageEl.classList.add('error');
+          generatedImageEl.style.display = 'none';
+          driveUploadStatusEl.style.display = 'none';
+        }
+      } catch (error) {
+        console.error('Error generating image or uploading to Drive:', error);
+        loadingMessageDiv.style.display = 'none';
+        resultContainerDiv.style.display = 'block';
+        generationMessageEl.textContent = `Terjadi kesalahan jaringan: ${error.message}`;
+        generationMessageEl.classList.add('error');
+        generatedImageEl.style.display = 'none';
+        driveUploadStatusEl.style.display = 'none';
+      }
+    }
+
+    finishButton.addEventListener('click', () => {
+      // Kosongkan session storage untuk pengguna berikutnya
+      sessionStorage.removeItem('capturedImage');
+      sessionStorage.removeItem('selectedTemplateName');
+
+      // --- PERUBAHAN DI SINI ---
+      // Mengarahkan kembali ke halaman awal (play.html) untuk memulai dari awal
+      window.location.href = 'play.html'; 
+    });
+
+    generateImage();
+  </script>
+</body>
+</html>

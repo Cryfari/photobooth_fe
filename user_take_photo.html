@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ambil Foto - Photobooth</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin-top: 20px; background-color: #eef; color: #333; }
+        .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.1); text-align: center; }
+        #videoContainer { border: 2px solid #ccc; margin-bottom: 15px; position: relative; width: 640px; height: 480px; background-color: #000;}
+        video { display: block; width: 100%; height: 100%;}
+        canvas { display: none; } /* Canvas disembunyikan, hanya untuk mengambil frame */
+        .controls { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .controls .timer-group { display: flex; align-items: center; gap: 8px; margin-bottom: 10px;}
+        .controls .timer-group label { font-weight: bold; }
+        .controls .timer-group select { padding: 8px; border-radius: 4px; border: 1px solid #ddd; }
+        .controls .action-buttons button { background-color: #007bff; color: white; padding: 10px 20px; margin: 0 5px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        .controls .action-buttons button:hover { background-color: #0056b3; }
+        .controls .action-buttons button:disabled { background-color: #ccc; cursor: not-allowed; }
+        #continueButton, #retakeButton { background-color: #28a745; }
+        #continueButton:hover, #retakeButton:hover { background-color: #218838; }
+        #retakeButton { background-color: #ffc107; color: #333;}
+        #retakeButton:hover { background-color: #e0a800;}
+        #photoPreview { margin-top:15px; border:1px solid #ddd; max-width: 320px; max-height: 240px; }
+        #countdownDisplay { font-size: 3em; color: red; margin-top: 10px; font-weight: bold; min-height: 1.2em; /* Ruang agar layout tidak bergeser */ }
+        .message { margin-top: 10px; color: red;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Ambil Foto Anda</h1>
+        <div id="videoContainer">
+            <video id="videoElement" autoplay playsinline></video>
+        </div>
+        <canvas id="canvasElement"></canvas>
+        <p id="countdownDisplay"></p> 
+        <img id="photoPreview" src="#" alt="Pratinjau Foto" style="display:none;">
+        
+        <div class="controls">
+            <div class="timer-group">
+                <label for="timerSelect">Timer:</label>
+                <select id="timerSelect">
+                    <option value="0">Tanpa Timer</option>
+                    <option value="3">3 Detik</option>
+                    <option value="5">5 Detik</option>
+                    <option value="10">10 Detik</option>
+                </select>
+            </div>
+            <div class="action-buttons">
+                <button id="shutterButton">Ambil Foto</button>
+                <button id="retakeButton" style="display:none;">Ulang Foto</button>
+                <button id="continueButton" style="display:none;" disabled>Lanjutkan</button>
+            </div>
+        </div>
+        <p id="message" class="message"></p>
+    </div>
+
+    <script>
+        const video = document.getElementById('videoElement');
+        const canvas = document.getElementById('canvasElement');
+        const photoPreview = document.getElementById('photoPreview');
+        const shutterButton = document.getElementById('shutterButton');
+        const retakeButton = document.getElementById('retakeButton');
+        const continueButton = document.getElementById('continueButton');
+        const timerSelect = document.getElementById('timerSelect');
+        const countdownDisplay = document.getElementById('countdownDisplay');
+        const messageEl = document.getElementById('message');
+        let stream;
+        let countdownInterval = null; // Untuk menyimpan ID interval hitungan mundur
+
+        // Fungsi untuk melakukan pengambilan gambar
+        function performCapture() {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            const imageDataUrl = canvas.toDataURL('image/png');
+            photoPreview.src = imageDataUrl;
+            photoPreview.style.display = 'block';
+            video.style.display = 'none'; 
+
+            sessionStorage.setItem('capturedImage', imageDataUrl);
+
+            shutterButton.style.display = 'none';
+            timerSelect.disabled = true; // Nonaktifkan pilihan timer setelah foto diambil
+            retakeButton.style.display = 'inline-block';
+            continueButton.style.display = 'inline-block';
+            continueButton.disabled = false;
+
+            if (stream) { 
+                stream.getTracks().forEach(track => track.stop());
+            }
+        }
+
+        async function startWebcam() {
+            messageEl.textContent = '';
+            countdownDisplay.textContent = ''; // Bersihkan hitungan mundur
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
+            try {
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+                stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false });
+                video.srcObject = stream;
+                video.style.display = 'block';
+                photoPreview.style.display = 'none';
+                shutterButton.style.display = 'inline-block';
+                shutterButton.disabled = false; // Aktifkan tombol shutter
+                timerSelect.disabled = false; // Aktifkan pilihan timer
+                retakeButton.style.display = 'none';
+                continueButton.style.display = 'none';
+                continueButton.disabled = true;
+            } catch (err) {
+                console.error("Error accessing webcam: ", err);
+                messageEl.textContent = "Tidak bisa mengakses webcam. Pastikan Anda memberikan izin.";
+            }
+        }
+
+        shutterButton.addEventListener('click', () => {
+            const timerDuration = parseInt(timerSelect.value, 10);
+            
+            shutterButton.disabled = true; // Nonaktifkan tombol shutter segera
+            timerSelect.disabled = true; // Nonaktifkan pilihan timer selama proses
+
+            if (timerDuration > 0) {
+                let count = timerDuration;
+                countdownDisplay.textContent = count;
+                
+                countdownInterval = setInterval(() => {
+                    count--;
+                    if (count > 0) {
+                        countdownDisplay.textContent = count;
+                    } else {
+                        countdownDisplay.textContent = 'Smile!'; // Atau teks lain
+                        clearInterval(countdownInterval);
+                        countdownInterval = null;
+                        // Tambahkan jeda singkat agar pengguna sempat melihat "Smile!"
+                        setTimeout(() => {
+                            countdownDisplay.textContent = ''; // Bersihkan setelah ambil
+                            performCapture();
+                        }, 500); // Jeda 0.5 detik
+                    }
+                }, 1000);
+            } else {
+                // Tanpa timer, langsung ambil foto
+                performCapture();
+            }
+        });
+
+        retakeButton.addEventListener('click', () => {
+            if (countdownInterval) { // Jika ada timer berjalan, hentikan
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
+            countdownDisplay.textContent = ''; // Bersihkan tampilan hitungan mundur
+            sessionStorage.removeItem('capturedImage');
+            // Tidak perlu mengatur ulang shutterButton.disabled atau timerSelect.disabled di sini
+            // karena akan diatur oleh startWebcam()
+            startWebcam(); 
+        });
+
+        continueButton.addEventListener('click', () => {
+            if (sessionStorage.getItem('capturedImage')) {
+                window.location.href = 'user_templates.html';
+            } else {
+                messageEl.textContent = "Ambil foto terlebih dahulu sebelum melanjutkan.";
+            }
+        });
+
+        startWebcam();
+    </script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pilih Template - Photobooth</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin-top: 20px; background-color: #eef; color: #333; }
+        .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.1); width: 90%; max-width: 800px;}
+        h1 { text-align: center; }
+        .templates-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .template-item { border: 2px solid transparent; padding: 10px; text-align: center; cursor: pointer; border-radius: 4px; transition: border-color 0.3s; }
+        .template-item img { max-width: 100%; height: auto; border-radius: 4px; margin-bottom: 5px; }
+        .template-item.selected { border-color: #007bff; background-color: #e7f3ff;}
+        .template-item p { margin: 0; font-size: 0.9em; color: #555; }
+        .controls { text-align: center; margin-top: 20px; }
+        .controls button { background-color: #007bff; color: white; padding: 10px 20px; margin: 0 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        .controls button:hover { background-color: #0056b3; }
+        .controls button:disabled { background-color: #ccc; cursor: not-allowed; }
+        .controls .back-button { background-color: #6c757d; }
+        .controls .back-button:hover { background-color: #5a6268; }
+        .message { margin-top: 10px; text-align: center; color: red;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Pilih Template Favorit Anda</h1>
+        <div id="templatesGrid" class="templates-grid">
+            <p>Memuat template...</p>
+        </div>
+        <div class="controls">
+            <button class="back-button" onclick="window.location.href='index.html'">Kembali</button>
+            <button id="continueToResultButton" disabled>Lanjutkan</button>
+        </div>
+        <p id="message" class="message"></p>
+    </div>
+
+    <script>
+        const templatesGrid = document.getElementById('templatesGrid');
+        const continueButton = document.getElementById('continueToResultButton');
+        const messageEl = document.getElementById('message');
+        const API_BASE_URL = 'http://127.0.0.1:8000';
+        let selectedTemplateName = null;
+
+        async function loadTemplates() {
+            messageEl.textContent = '';
+            if (!sessionStorage.getItem('capturedImage')) {
+                messageEl.textContent = "Tidak ada foto yang diambil. Silakan kembali dan ambil foto.";
+                templatesGrid.innerHTML = '<p>Tidak ada foto. <a href="index.html">Kembali ke Webcam</a></p>';
+                continueButton.disabled = true;
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/templates`);
+                if (!response.ok) {
+                    throw new Error(`Gagal mengambil template: ${response.statusText}`);
+                }
+                const data = await response.json();
+                templatesGrid.innerHTML = ''; // Clear loading message
+
+                if (data.images && data.images.length > 0) {
+                    data.images.forEach(template => {
+                        const item = document.createElement('div');
+                        item.classList.add('template-item');
+                        item.dataset.templateName = template.name;
+                        
+                        const img = document.createElement('img');
+                        img.src = `${API_BASE_URL}/${template.url}`; // Assuming URL is relative to API base
+                        img.alt = template.name;
+                        
+                        const namePara = document.createElement('p');
+                        namePara.textContent = template.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()); // Prettify name
+
+                        item.appendChild(img);
+                        item.appendChild(namePara);
+                        item.addEventListener('click', () => selectTemplate(item, template.name));
+                        templatesGrid.appendChild(item);
+                    });
+                } else {
+                    templatesGrid.innerHTML = '<p>Tidak ada template yang tersedia.</p>';
+                }
+            } catch (error) {
+                console.error('Error loading templates:', error);
+                templatesGrid.innerHTML = `<p>Error memuat template: ${error.message}</p>`;
+                messageEl.textContent = `Error: ${error.message}`;
+            }
+        }
+
+        function selectTemplate(selectedItem, templateName) {
+            document.querySelectorAll('.template-item').forEach(item => item.classList.remove('selected'));
+            selectedItem.classList.add('selected');
+            selectedTemplateName = templateName;
+            sessionStorage.setItem('selectedTemplateName', templateName);
+            continueButton.disabled = false;
+            messageEl.textContent = '';
+        }
+
+        continueButton.addEventListener('click', () => {
+            if (selectedTemplateName && sessionStorage.getItem('capturedImage')) {
+                window.location.href = 'user_result.html';
+            } else {
+                messageEl.textContent = "Silakan pilih template terlebih dahulu.";
+            }
+        });
+
+        loadTemplates();
+    </script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Photobooth</title>
+    
+    <style>
+        /* CSS tetap sama, tidak ada perubahan */
+        :root {
+            --bg-color: #fcf6e9;
+            --text-color: #e67e22;
+            --text-glow-color: rgba(255, 255, 255, 0.5);
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body {
+            margin: 0; padding: 0; font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color); color: var(--text-color); height: 100%; 
+        }
+        main {
+            display: flex; justify-content: center; align-items: center;
+            flex-direction: column; text-align: center; min-height: 100vh; padding: 20px;
+        }
+        h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 600; letter-spacing: 3px;
+            text-transform: uppercase; text-shadow: 0 0 8px var(--text-glow-color);
+            margin: 0 0 2rem 0;
+        }
+        .start-button {
+            background: none; border: none; display: inline-flex; align-items: center;
+            gap: 12px; color: var(--text-color); font-size: 1.5rem; font-weight: 600;
+            letter-spacing: 2px; cursor: pointer;
+            transition: transform 0.2s ease-out, filter 0.2s ease-out;
+        }
+        .start-button svg { width: 24px; height: 24px; fill: currentColor; }
+        .start-button:hover, .start-button:focus-visible {
+            transform: scale(1.05); filter: brightness(1.1); outline: none;
+        }
+        .start-button:focus-visible {
+            outline: 2px solid var(--text-color); outline-offset: 5px; border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <main>
+        <h1>Welcome to AI Photobooth</h1>
+        
+        <button class="start-button" id="startButton">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-labelledby="playIconTitle">
+                <title id="playIconTitle">Ikon Play</title>
+                <path d="M8 5v14l11-7z"></path>
+            </svg>
+            <span>START</span>
+        </button>
+    </main>
+    
+    <script>
+        const startButton = document.getElementById('startButton');
+
+        startButton.addEventListener('click', () => {
+            console.log('Tombol START ditekan! Mengarahkan ke halaman webcam...');
+            
+            // --- PERUBAHAN DI SINI ---
+            // Mengganti alert dengan navigasi ke halaman pengambilan foto
+            window.location.href = 'user_take_photo.html'; 
+        });
+    </script>
+
+</body>
+</html>

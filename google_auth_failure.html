@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Google Gagal</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: #fff3f3; color: #721c24; }
+        .container { text-align: center; padding: 30px; background-color: #f8d7da; border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
+        h1 { color: #721c24; }
+        p { font-size: 1.2em; }
+        #errorMessage { margin-top: 10px; font-weight: bold; }
+        a { color: #007bff; text-decoration: none; font-weight: bold; padding: 10px 15px; background-color: #fff; border: 1px solid #007bff; border-radius: 4px; margin-top: 20px; display: inline-block;}
+        a:hover { background-color: #007bff; color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Login Google Gagal</h1>
+        <p>Terjadi kesalahan saat mencoba menghubungkan akun Google Anda.</p>
+        <p id="errorMessage"></p>
+        <a href="admin_dashboard.html" id="dashboardLink">Kembali ke Dashboard</a>
+    </div>
+    <script>
+        localStorage.removeItem('googleAuthStatus'); // Ensure status is cleared
+        const params = new URLSearchParams(window.location.search);
+        const error = params.get('error');
+        const message = params.get('message');
+        const errorMessageElement = document.getElementById('errorMessage');
+        const dashboardLink = document.getElementById('dashboardLink');
+
+        let displayMessage = "Silakan coba lagi.";
+        if (message) {
+            displayMessage = decodeURIComponent(message);
+        } else if (error) {
+            switch(error) {
+                case 'auth_error': displayMessage = "Otorisasi Google gagal atau dibatalkan."; break;
+                case 'state_missing': displayMessage = "Parameter state tidak ditemukan. Mungkin sesi tidak valid."; break;
+                case 'state_not_found': displayMessage = "State otorisasi tidak cocok. Upaya login mungkin telah dimanipulasi atau kedaluwarsa."; break;
+                case 'state_expired': displayMessage = "Sesi otorisasi Google Anda telah kedaluwarsa. Coba login lagi."; break;
+                case 'admin_id_missing': displayMessage = "Gagal mengidentifikasi pengguna untuk menyimpan kredensial Google."; break;
+                case 'no_code': displayMessage = "Kode otorisasi dari Google tidak diterima."; break;
+                case 'internal_error_callback': displayMessage = "Terjadi kesalahan internal saat memproses otorisasi Google."; break;
+                default: displayMessage = "Terjadi kesalahan yang tidak diketahui.";
+            }
+        }
+        errorMessageElement.textContent = `Detail: ${displayMessage}`;
+        
+        // Pass the error message back to the dashboard
+        dashboardLink.href = `admin_dashboard.html?error=true&message=${encodeURIComponent(displayMessage)}`;
+    </script>
+</body>
+</html>
