@@ -22,7 +22,7 @@
         <a href="admin_dashboard.html" id="dashboardLink">Kembali ke Dashboard</a>
     </div>
     <script>
-        localStorage.removeItem('googleAuthStatus'); // Ensure status is cleared
+        localStorage.removeItem('googleAuthStatus');
         const params = new URLSearchParams(window.location.search);
         const error = params.get('error');
         const message = params.get('message');
@@ -46,7 +46,6 @@
         }
         errorMessageElement.textContent = `Detail: ${displayMessage}`;
         
-        // Pass the error message back to the dashboard
         dashboardLink.href = `admin_dashboard.html?error=true&message=${encodeURIComponent(displayMessage)}`;
     </script>
 </body>

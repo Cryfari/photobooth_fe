@@ -5,203 +5,186 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hasil - AI Photobooth</title>
     <style>
-        /* =================================
-           1. SETUP DASAR & VARIABEL WARNA
-           ================================= */
+       
         :root {
-            --bg-color: #D9773B; /* Oranye */
-            --frame-bg-color: #FEFBF5; /* Krem/Putih */
+            --bg-color: #D9773B;
+            --frame-bg-color: #FEFBF5;
             --text-color: #FFFFFF;
-            --loading-spinner-color: #FFFFFF;
+            --loading-spinner-color: #D9773B;
             --finished-button-color: #FFFFFF;
             --finished-button-bg: transparent;
             --font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
         }
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { height: 100%; margin: 0; padding: 0; font-family: var(--font-family); background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; }
 
-        *, *::before, *::after {
-            box-sizing: border-box;
-        }
-
-        html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            font-family: var(--font-family);
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* =================================
-           2. KONTEN UTAMA
-           ================================= */
+      
         .result-container {
-            flex-grow: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+            flex-grow: 1; display: flex; justify-content: center; align-items: flex-start;
+            padding: 40px; overflow-y: auto;
         }
-
-        .result-frame {
-            background-color: var(--frame-bg-color);
-            border-radius: 20px;
-            width: 90vw;
-            height: 90vh;
-            max-width: 800px;
-            max-height: 600px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            position: relative; /* Untuk posisi absolut elemen di dalamnya */
+        .result-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 40px; width: 100%; max-width: 1400px;
         }
-
-        #resultImage {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-            display: none;
+        .result-card {
+            background-color: var(--frame-bg-color); border-radius: 20px;
+            overflow: hidden; display: flex; flex-direction: column;
+            aspect-ratio: 3 / 4;
         }
-
-        /* =================================
-           3. FOOTER (TOMBOL & QR)
-           ================================= */
-        .result-footer {
-            flex-shrink: 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 40px;
-            height: 80px;
-        }
-
-        #finishedButton {
-            font-family: inherit;
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--finished-button-color);
-            background: var(--finished-button-bg);
-            border: none;
+        .result-card .image-container {
+            flex-grow: 1; display: flex; justify-content: center; align-items: center;
+            position: relative; background-color: #e0e0e0;
             cursor: pointer;
-            padding: 10px 20px;
-            border-radius: 10px;
-            transition: background-color 0.2s;
         }
+        .result-card img.result-image { width: 100%; height: 100%; object-fit: cover; }
+        .result-card .qr-container {
+            flex-shrink: 0; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; padding: 15px;
+            background-color: #f0f2f5;
+        }
+        .result-card .qr-container img { width: 120px; height: 120px; border-radius: 8px; }
+        .result-card .qr-container p { color: #555; font-size: 0.8rem; font-weight: 600; margin: 8px 0 0 0; }
 
-        #finishedButton:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
         
-        /* --- PERUBAHAN DI SINI --- */
-        #qrCode {
-            width: 150px; /* Ukuran diubah menjadi 150px */
-            height: 150px; /* Ukuran diubah menjadi 150px */
-            display: flex; /* Menggunakan flex untuk memusatkan gambar di dalamnya */
-            justify-content: center;
-            align-items: center;
+        .page-footer {
+            flex-shrink: 0; display: flex; justify-content: center;
+            align-items: center; padding: 20px 40px; height: 80px;
         }
-        #qrCode img {
-            max-width: 100%;
-            height: auto;
-            display: block;
-            border-radius: 8px; /* Sudut sedikit membulat untuk estetika */
+        #finishedButton {
+            font-family: inherit; font-size: 1.5rem; font-weight: bold;
+            color: var(--finished-button-color); background: var(--finished-button-bg);
+            border: 2px solid var(--finished-button-color); border-radius: 40px;
+            cursor: pointer; padding: 10px 40px; transition: background-color 0.2s, opacity 0.2s;
         }
-
-        /* =================================
-           4. TAMPILAN LOADING
-           ================================= */
-        .loading-container {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
-        }
-
+        #finishedButton:hover:not(:disabled) { background-color: rgba(255, 255, 255, 0.1); }
+        #finishedButton:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+       
         .loading-spinner {
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
+            border-radius: 50%; width: 50px; height: 50px;
             border: 5px solid rgba(0, 0, 0, 0.2);
-            border-top-color: #D9773B;
+            border-top-color: var(--loading-spinner-color);
             animation: spin 1s linear infinite;
         }
-
-        .loading-text {
+        .loading-text { color: #333; margin-top: 15px; font-size: 1.2rem; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        
+        .lightbox-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 1000;
+            opacity: 0; visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0s 0.3s;
+        }
+        .lightbox-overlay.visible {
+            opacity: 1; visibility: visible;
+            transition-delay: 0s;
+        }
+        .lightbox-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 90%;
+            height: 90%;
+            max-width: 500px;
+            max-height: 800px;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+        .lightbox-overlay.visible .lightbox-content {
+            transform: scale(1);
+        }
+        .lightbox-image-frame {
+            flex-grow: 1;
+            background-color: white;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        .lightbox-image-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .lightbox-qr-frame {
+            flex-shrink: 0;
+            background-color: white;
+            padding: 15px;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .lightbox-qr-frame img {
+            width: 150px;
+            height: 150px;
+        }
+        .lightbox-qr-frame p {
             color: #333;
-            margin-top: 15px;
-            font-size: 1.2rem;
+            font-weight: 700;
+            font-size: 1rem;
+            margin: 0;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .loading-container.hidden {
-            display: none;
-        }
-
-        /* =================================
-           5. PESAN STATUS
-           ================================= */
+        
         #statusMessage {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: rgba(0, 0, 0, 0.6);
-            color: var(--text-color);
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            white-space: nowrap;
-            z-index: 20;
+            position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7); color: white;
+            padding: 12px 24px; border-radius: 8px; font-size: 1rem;
+            z-index: 100; opacity: 0; visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
         }
-        #statusMessage.hidden {
-            display: none;
-        }
-
+        #statusMessage.visible { opacity: 1; visibility: visible; }
     </style>
 </head>
 <body>
 
     <div class="result-container">
-        <div class="result-frame">
-            <img id="resultImage" src="#" alt="Foto AI Anda">
-            
-            <div id="loadingContainer" class="loading-container">
-                <div class="loading-spinner"></div>
-                <p class="loading-text">Memproses...</p>
+        <div id="resultGrid" class="result-grid"></div>
+    </div>
+
+    <div class="page-footer">
+        <button id="finishedButton" disabled>SELESAI</button>
+    </div>
+    
+    <div id="statusMessage"></div>
+
+    <div id="lightboxOverlay" class="lightbox-overlay">
+        <div class="lightbox-content">
+            <div class="lightbox-image-frame">
+                <img id="lightboxImage" src="" alt="Detail Gambar Hasil">
             </div>
-            
-            <div id="statusMessage" class="hidden"></div>
+            <div id="lightboxQrWrapper" class="lightbox-qr-frame">
+                <img id="lightboxQr" src="" alt="Kode QR untuk Unduh">
+                <p>Scan to Download</p>
+            </div>
         </div>
     </div>
 
-    <div class="result-footer">
-        <button id="finishedButton">SELESAI</button>
-        <div id="qrCode"></div>
-    </div>
-
     <script>
-        const resultImage = document.getElementById('resultImage');
+        const resultGrid = document.getElementById('resultGrid');
         const finishedButton = document.getElementById('finishedButton');
-        const loadingContainer = document.getElementById('loadingContainer');
         const statusMessage = document.getElementById('statusMessage');
-        const qrCodeContainer = document.getElementById('qrCode');
+        const lightboxOverlay = document.getElementById('lightboxOverlay');
+        const lightboxImage = document.getElementById('lightboxImage');
+        const lightboxQr = document.getElementById('lightboxQr');
+        const lightboxQrWrapper = document.getElementById('lightboxQrWrapper');
+        
         const API_BASE_URL = 'http://127.0.0.1:8000';
+
+        
+        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
         function showStatus(message, isError = false) {
             statusMessage.textContent = message;
-            statusMessage.classList.remove('hidden');
+            statusMessage.style.backgroundColor = isError ? '#D73737' : '#29CC97';
+            statusMessage.classList.add('visible');
             setTimeout(() => {
-                statusMessage.classList.add('hidden');
-            }, 3000);
+                statusMessage.classList.remove('visible');
+            }, 4000); 
         }
 
         function dataURLtoBlob(dataURL) {
@@ -216,19 +199,16 @@
             return new Blob([u8arr], {type:mime});
         }
 
-        async function generateImage() {
-            loadingContainer.classList.remove('hidden');
-            resultImage.style.display = 'none';
-
-            const capturedImageDataUrl = sessionStorage.getItem('capturedImage');
-            const templateName = sessionStorage.getItem('selectedTemplateName');
-
-            if (!capturedImageDataUrl || !templateName) {
-                showStatus("Error: Data gambar atau template tidak ditemukan.", true);
-                loadingContainer.classList.add('hidden');
-                setTimeout(() => window.location.href = 'user_take_photo.html', 2000);
-                return;
-            }
+        async function processSingleImage(templateName, capturedImageDataUrl, cardElement) {
+            const imageContainer = cardElement.querySelector('.image-container');
+            const qrContainer = cardElement.querySelector('.qr-container');
+            
+            const formattedName = templateName.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            imageContainer.innerHTML = `
+                <div class="loading-spinner"></div>
+                <p class="loading-text" style="position: absolute; bottom: 20px; color: #555; font-weight: 600;">Processing ${formattedName}...</p>
+            `;
+            qrContainer.innerHTML = '<p>Generating QR Code...</p>';
 
             const imageBlob = dataURLtoBlob(capturedImageDataUrl);
             const formData = new FormData();
@@ -239,43 +219,118 @@
                     method: 'POST',
                     body: formData
                 });
-
                 const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || `Gagal memproses gambar.`);
 
-                if (!response.ok) {
-                    throw new Error(data.detail || `Gagal memproses gambar: ${response.statusText}`);
-                }
+                const resultImgSrc = `data:image/png;base64,${data.generated_image_base64}`;
+                const qrImgSrc = (data.google_drive_upload && data.google_drive_upload.qr_code_base64) 
+                    ? `data:image/png;base64,${data.google_drive_upload.qr_code_base64}` 
+                    : null;
 
-                resultImage.src = `data:image/png;base64,${data.generated_image_base64}`;
-                resultImage.style.display = 'block';
-
-                if (data.google_drive_upload && data.google_drive_upload.detail) {
-                    showStatus(data.google_drive_upload.detail);
-                }
-
-                if (data.google_drive_upload && data.google_drive_upload.qr_code_base64) {
-                    const qrImage = document.createElement('img');
-                    qrImage.src = `data:image/png;base64,${data.google_drive_upload.qr_code_base64}`;
-                    qrImage.alt = 'Kode QR untuk Google Drive';
-                    qrCodeContainer.innerHTML = '';
-                    qrCodeContainer.appendChild(qrImage);
+                imageContainer.innerHTML = '';
+                const resultImg = document.createElement('img');
+                resultImg.src = resultImgSrc;
+                resultImg.alt = `Hasil AI untuk template ${templateName}`;
+                resultImg.classList.add('result-image');
+                imageContainer.appendChild(resultImg);
+                
+                imageContainer.addEventListener('click', () => {
+                    openLightbox(resultImgSrc, qrImgSrc);
+                });
+                
+                if (qrImgSrc) {
+                    qrContainer.innerHTML = '';
+                    const qrImg = document.createElement('img');
+                    qrImg.src = qrImgSrc;
+                    qrImg.alt = 'Kode QR untuk mengunduh';
+                    const qrText = document.createElement('p');
+                    qrText.textContent = 'Scan to Download';
+                    qrContainer.appendChild(qrImg);
+                    qrContainer.appendChild(qrText);
+                } else {
+                    qrContainer.innerHTML = '<p>QR Code tidak tersedia.</p>';
                 }
 
             } catch (error) {
-                console.error('Error generating image:', error);
-                showStatus(`Error: ${error.message}`, true);
-            } finally {
-                loadingContainer.classList.add('hidden');
+                console.error(`Error generating image for ${templateName}:`, error);
+                imageContainer.innerHTML = `<p style="padding: 1rem; color: #555; font-weight: 600;">Gagal memuat: ${error.message}</p>`;
+                imageContainer.style.cursor = 'default';
             }
+        }
+
+        async function generateImages() {
+            finishedButton.disabled = true;
+            const capturedImageDataUrl = sessionStorage.getItem('capturedImage');
+            const selectedTemplatesStr = sessionStorage.getItem('selectedTemplateNames');
+            
+            if (!capturedImageDataUrl || !selectedTemplatesStr) {
+                showStatus("Error: Data gambar atau template tidak ditemukan.", true);
+                setTimeout(() => window.location.href = 'user_take_photo.html', 3000);
+                return;
+            }
+
+            try {
+                const selectedTemplates = JSON.parse(selectedTemplatesStr);
+                resultGrid.innerHTML = '';
+
+                const cardElements = selectedTemplates.map(templateName => {
+                    const card = document.createElement('div');
+                    card.classList.add('result-card');
+                    card.innerHTML = `
+                        <div class="image-container"><p style="color:#555;">Menunggu giliran...</p></div>
+                        <div class="qr-container"><p>Menunggu gambar...</p></div>
+                    `;
+                    resultGrid.appendChild(card);
+                    return card;
+                });
+
+                let index = 0;
+                for (const templateName of selectedTemplates) {
+                    showStatus(`Memproses gambar ${index + 1} dari ${selectedTemplates.length}...`);
+                    const currentCard = cardElements[index];
+                    await processSingleImage(templateName, capturedImageDataUrl, currentCard);
+                    
+                    if (index < selectedTemplates.length - 1) {
+                        await delay(5000);
+                    }
+                    index++;
+                }
+
+                showStatus('Semua gambar berhasil diproses!', false);
+
+            } catch (e) {
+                showStatus("Error: Data template tidak valid.", true);
+                setTimeout(() => window.location.href = 'user_templates.html', 3000);
+            } finally {
+                finishedButton.disabled = false;
+            }
+        }
+
+        function openLightbox(imgSrc, qrSrc) {
+            lightboxImage.src = imgSrc;
+            if (qrSrc) {
+                lightboxQr.src = qrSrc;
+                lightboxQrWrapper.style.display = 'flex';
+            } else {
+                lightboxQr.src = '';
+                lightboxQrWrapper.style.display = 'none';
+            }
+            lightboxOverlay.classList.add('visible');
         }
 
         finishedButton.addEventListener('click', () => {
             sessionStorage.removeItem('capturedImage');
-            sessionStorage.removeItem('selectedTemplateName');
+            sessionStorage.removeItem('selectedTemplateNames');
             window.location.href = 'index.html';
         });
 
-        generateImage();
+        lightboxOverlay.addEventListener('click', (event) => {
+            if (event.target === lightboxOverlay) {
+                lightboxOverlay.classList.remove('visible');
+            }
+        });
+        
+        generateImages();
     </script>
 </body>
 </html>

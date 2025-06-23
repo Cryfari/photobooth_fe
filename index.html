@@ -6,7 +6,7 @@
     <title>AI Photobooth</title>
     
     <style>
-        /* CSS tetap sama, tidak ada perubahan */
+        
         :root {
             --bg-color: #fcf6e9;
             --text-color: #e67e22;
@@ -47,12 +47,11 @@
         <h1>Welcome to AI Photobooth</h1>
         
         <button class="start-button" id="startButton">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-labelledby="playIconTitle">
-                <title id="playIconTitle">Ikon Play</title>
-                <path d="M8 5v14l11-7z"></path>
-            </svg>
-            <span>START</span>
-        </button>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false">
+        <path d="M8 5v14l11-7z"></path>
+    </svg>
+    <span>START</span>
+</button>
     </main>
     
     <script>
@@ -61,8 +60,6 @@
         startButton.addEventListener('click', () => {
             console.log('Tombol START ditekan! Mengarahkan ke halaman webcam...');
             
-            // --- PERUBAHAN DI SINI ---
-            // Mengganti alert dengan navigasi ke halaman pengambilan foto
             window.location.href = 'user_take_photo.html'; 
         });
     </script>

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login - AI Photobooth</title>
     <style>
-        /* CSS tidak ada perubahan, tetap sama seperti sebelumnya */
+        
         :root {
             --bg-start-color: #FFF9F0;
             --bg-end-color: #FFFFFF;
@@ -88,7 +88,7 @@
         const togglePasswordButton = document.getElementById('togglePassword');
         const eyeIcon = document.getElementById('eyeIcon');
         const eyeSlashIcon = document.getElementById('eyeSlashIcon');
-        const rememberMeCheckbox = document.getElementById('rememberMe'); // [BARU] Ambil elemen checkbox
+        const rememberMeCheckbox = document.getElementById('rememberMe'); 
         const API_BASE_URL = 'http://127.0.0.1:8000';
 
         togglePasswordButton.addEventListener('click', () => {
@@ -104,7 +104,7 @@
             messageDiv.className = 'message';
 
             const password = passwordInput.value;
-            const remember = rememberMeCheckbox.checked; // [BARU] Dapatkan status checkbox
+            const remember = rememberMeCheckbox.checked; 
 
             try {
                 const response = await fetch(`${API_BASE_URL}/login`, {
@@ -112,7 +112,6 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    // [DIMODIFIKASI] Kirim status 'remember' ke backend
                     body: JSON.stringify({ 
                         password: password,
                         remember: remember 
@@ -122,7 +121,6 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    // Simpan token yang diterima. Backend akan menentukan masa berlakunya.
                     localStorage.setItem('adminToken', data.access_token);
                     window.location.href = 'admin_dashboard.html';
                 } else {

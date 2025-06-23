@@ -8,7 +8,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        /* CSS tidak berubah, tetap sama seperti sebelumnya */
         :root {
             --sidebar-bg: #FFFFFF;
             --main-bg: #F7F8FC;
@@ -163,13 +162,7 @@
             setTimeout(() => { messageDiv.style.display = 'none'; }, 4000);
         }
 
-        /**
-         * [FUNGSI YANG DIPERBAIKI]
-         * Mengonversi string Base64 (baik mentah maupun Data URL) menjadi Blob.
-         */
         function base64ToBlob(base64String, contentType = 'image/png', sliceSize = 512) {
-            // Cek apakah string input adalah Data URL, jika ya, ambil hanya data base64-nya.
-            // Jika tidak, asumsikan itu adalah data base64 mentah.
             const base64Data = base64String.includes(',') 
                 ? base64String.split(',')[1] 
                 : base64String;
@@ -188,7 +181,7 @@
                 }
                 return new Blob(byteArrays, {type: contentType});
             } catch (e) {
-                // Tangkap error jika `atob` gagal (karena string tidak valid)
+                
                 console.error("Gagal melakukan decode Base64:", e);
                 displayMessage("Data gambar pratinjau rusak atau tidak valid.", "error");
                 return null;
@@ -217,7 +210,7 @@
                 if (response.status === 401) { handleUnauthorized(); return; }
                 const data = await response.json();
                 if (response.ok && data.generated_image_base64) {
-                    generatedTemplateImageBase64 = data.generated_image_base64; // Simpan data mentah
+                    generatedTemplateImageBase64 = data.generated_image_base64; 
                     generatedImagePreview.src = `data:image/png;base64,${generatedTemplateImageBase64}`;
                     previewBanner.style.display = 'block';
                     previewStatus.style.display = 'block';
@@ -247,7 +240,7 @@
             }
 
             const imageBlob = base64ToBlob(generatedTemplateImageBase64);
-            // Hentikan proses jika blob gagal dibuat
+            
             if (!imageBlob) {
                 return;
             }
