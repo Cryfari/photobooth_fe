@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket History - Admin Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sidebar-bg: #FFFFFF;
+            --main-bg: #F7F8FC;
+            --card-bg: #FFFFFF;
+            --primary-orange: #F58D3D;
+            --text-dark: #252733;
+            --text-gray: #9FA2B4;
+            --text-inactive: #4B5563;
+            --border-color: #DFE0EB;
+            --danger-color: #D73737;
+            --success-color: #29CC97;
+            --font-family: 'Mulish', sans-serif;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: var(--font-family);
+            background-color: var(--main-bg);
+            color: var(--text-dark);
+            font-size: 14px;
+        }
+
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 255px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 30px;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 24px 30px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sidebar-nav {
+            padding: 16px;
+        }
+
+        .sidebar-nav .nav-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-gray);
+            font-weight: 700;
+            padding: 8px 14px;
+            margin-bottom: 8px;
+        }
+
+        .sidebar-nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar-nav a {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 14px;
+            margin-bottom: 4px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text-inactive);
+            font-weight: 600;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .sidebar-nav a:hover {
+            background-color: #F3F4F6;
+        }
+
+        .sidebar-nav a.active {
+            background-color: var(--primary-orange);
+            color: white;
+        }
+
+        .sidebar-nav a.active svg {
+            fill: white;
+        }
+        
+        .sidebar-nav a.active:hover {
+            background-color: #E8832E;
+        }
+
+        .sidebar-nav svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--text-inactive);
+        }
+        
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .content-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .history-button {
+            background-color: var(--card-bg);
+            color: var(--text-dark);
+            border: 1px solid var(--border-color);
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        
+        .content-card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 20px 30px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        th {
+            color: var(--text-gray);
+            font-weight: 700;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2px;
+        }
+
+        table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-weight: 700;
+            font-size: 0.8rem;
+        }
+        .status-badge.active {
+            color: var(--success-color);
+            background-color: #EAFBF5;
+        }
+        .status-badge.used {
+            color: var(--danger-color);
+            background-color: #FEE2E2;
+        }
+        .status-badge.expired {
+            color: var(--text-gray);
+            background-color: #F2F2F2;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+            <div class="content-header">
+                <h1>Ticket History</h1>
+                <a href="admin_add_ticket.html" class="history-button">Back to Generate</a>
+            </div>
+
+            <div class="content-card">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Token</th>
+                                <th>Package</th>
+                                <th>Status</th>
+                                <th>Created At</th>
+                                <th>Expires At</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ticketsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/admin_sidebar.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            createSidebar('tickets');
+            loadTickets();
+        });
+
+        const API_BASE_URL = 'http://127.0.0.1:8000';
+        const token = localStorage.getItem('adminToken');
+        if (!token) window.location.href = 'admin_login.html';
+
+        const tableBody = document.getElementById('ticketsTableBody');
+
+        async function loadTickets() {
+            tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">Loading tickets...</td></tr>';
+            try {
+                const response = await fetch(`${API_BASE_URL}/tickets/`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.status === 401) { window.location.href = 'admin_login.html'; return; }
+                if (!response.ok) throw new Error('Failed to load tickets.');
+                
+                const tickets = await response.json();
+                tableBody.innerHTML = '';
+
+                if (tickets.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">No tickets have been generated yet.</td></tr>';
+                    return;
+                }
+
+                tickets.forEach(ticket => {
+                    const row = document.createElement('tr');
+                    let statusHtml;
+
+                    if (ticket.is_used) {
+                        statusHtml = '<span class="status-badge used">Used</span>';
+                    } else if (!ticket.is_active) {
+                        statusHtml = '<span class="status-badge expired">Expired</span>';
+                    } else {
+                        statusHtml = '<span class="status-badge active">Active</span>';
+                    }
+                    
+                    const localeOptions = {
+                        year: 'numeric', month: 'long', day: 'numeric',
+                        hour: '2-digit', minute: '2-digit'
+                    };
+
+                    row.innerHTML = `
+                        <td><strong>${ticket.token}</strong></td>
+                        <td>${ticket.package.name}</td>
+                        <td>${statusHtml}</td>
+                        <td>${new Date(ticket.created_at).toLocaleString('id-ID', localeOptions)}</td>
+                        <td>${new Date(ticket.expires_at).toLocaleString('id-ID', localeOptions)}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error(error);
+                tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">Error loading data.</td></tr>';
+            }
+        }
+    </script>
+</body>
+</html>
