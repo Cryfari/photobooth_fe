@@ -3,12 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Kdam+Thmor+Pro&display=swap" rel="stylesheet">
     <title>Pilih Template - AI Photobooth</title>
     <style>
-        
         :root {
             --bg-color: #D9773B;
             --text-color: #FFFFFF;
@@ -17,7 +13,7 @@
             --button-hover-bg-color: rgba(255, 255, 255, 0.1);
             --selection-outline-color: #FFFFFF;
             --selection-checkmark-bg: #D9773B;
-            --font-family: 'Kdam Thmor Pro','Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            --font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
         }
 
         *, *::before, *::after { box-sizing: border-box; }
@@ -37,7 +33,7 @@
         }
         
         .template-item {
-            position: relative; 
+            position: relative;
             border-radius: 20px;
             overflow: hidden;
             cursor: pointer;
@@ -59,7 +55,6 @@
             transition: filter 0.2s ease;
         }
 
-        
         .template-item .checkmark {
             position: absolute;
             top: 12px;
@@ -75,6 +70,7 @@
             opacity: 0;
             transform: scale(0.5);
             transition: all 0.2s ease-out;
+            z-index: 2;
         }
 
         .template-item .checkmark svg {
@@ -85,17 +81,38 @@
             stroke-width: 2;
         }
         
-        
         .template-item.selected {
             outline-color: var(--selection-outline-color);
         }
         .template-item.selected img {
-            filter: brightness(0.8); 
+            filter: brightness(0.8);
         }
         .template-item.selected .checkmark {
             opacity: 1;
             transform: scale(1);
             background-color: var(--selection-checkmark-bg);
+        }
+
+        .template-item .name-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 24px 10px 12px 10px;
+            background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);
+            pointer-events: none;
+        }
+        
+        .template-item .name-overlay p {
+            margin: 0;
+            color: white;
+            font-weight: 600;
+            text-align: center;
+            font-size: 0.9rem;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .page-controls {
@@ -180,8 +197,15 @@
                         checkmark.classList.add('checkmark');
                         checkmark.innerHTML = `<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`;
 
+                        const nameOverlay = document.createElement('div');
+                        nameOverlay.classList.add('name-overlay');
+                        const nameText = document.createElement('p');
+                        nameText.textContent = template.name.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                        nameOverlay.appendChild(nameText);
+
                         item.appendChild(img);
                         item.appendChild(checkmark);
+                        item.appendChild(nameOverlay);
                         
                         templatesGrid.appendChild(item);
                     });
@@ -194,30 +218,18 @@
             }
         }
         
-        
-        function selectTemplate(selectedItem) {
-            const templateName = selectedItem.dataset.templateName;
-            
-            
-            selectedItem.classList.toggle('selected');
-            
-            
-            if (selectedTemplates.has(templateName)) {
-                selectedTemplates.delete(templateName);
-            } else {
-                selectedTemplates.add(templateName);
-            }
-            
-            
-            continueButton.disabled = selectedTemplates.size === 0;
-            messageEl.textContent = '';
-        }
-
-        
         templatesGrid.addEventListener('click', (event) => {
             const clickedItem = event.target.closest('.template-item');
             if (clickedItem) {
-                selectTemplate(clickedItem);
+                const templateName = clickedItem.dataset.templateName;
+                clickedItem.classList.toggle('selected');
+                if (selectedTemplates.has(templateName)) {
+                    selectedTemplates.delete(templateName);
+                } else {
+                    selectedTemplates.add(templateName);
+                }
+                continueButton.disabled = selectedTemplates.size === 0;
+                messageEl.textContent = '';
             }
         });
         
@@ -227,7 +239,6 @@
 
         continueButton.addEventListener('click', () => {
             if (selectedTemplates.size > 0) {
-                
                 const selectedArray = Array.from(selectedTemplates);
                 sessionStorage.setItem('selectedTemplateNames', JSON.stringify(selectedArray));
                 window.location.href = 'user_result.html';
