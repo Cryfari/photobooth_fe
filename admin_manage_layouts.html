@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Layouts - Admin Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <style>
+        /* Variabel Global & Gaya Dasar */
+        :root {
+            --sidebar-bg: #FFFFFF;
+            --main-bg: #F7F8FC;
+            --card-bg: #FFFFFF;
+            --primary-orange: #F58D3D;
+            --text-dark: #252733;
+            --text-gray: #9FA2B4;
+            --text-inactive: #4B5563;
+            --border-color: #DFE0EB;
+            --danger-color: #D73737;
+            --success-color: #29CC97;
+            --font-family: 'Mulish', sans-serif;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: var(--font-family);
+            background-color: var(--main-bg);
+            color: var(--text-dark);
+            font-size: 14px;
+        }
+
+        /* Layout Utama Admin */
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 30px;
+        }
+
+        /* --- CSS UNTUK SIDEBAR (DIGABUNGKAN) --- */
+        .sidebar {
+            width: 255px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 24px 30px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sidebar-nav {
+            padding: 16px;
+        }
+
+        .sidebar-nav .nav-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-gray);
+            font-weight: 700;
+            padding: 8px 14px;
+            margin-bottom: 8px;
+        }
+
+        .sidebar-nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar-nav a {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 14px;
+            margin-bottom: 4px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text-inactive);
+            font-weight: 600;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .sidebar-nav a:hover {
+            background-color: #F3F4F6;
+        }
+
+        .sidebar-nav a.active {
+            background-color: var(--primary-orange);
+            color: white;
+        }
+
+        .sidebar-nav a.active svg {
+            fill: white;
+        }
+        
+        .sidebar-nav a.active:hover {
+            background-color: #E8832E;
+        }
+
+        .sidebar-nav svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--text-inactive);
+        }
+        /* --- AKHIR DARI CSS SIDEBAR --- */
+
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .content-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .layout-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+
+        .content-card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            padding: 30px;
+        }
+        .content-card h2 {
+            margin-top: 0;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .form-group input[type="text"], .form-group input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+        }
+
+        /* Gaya untuk Area Kanvas Fabric.js */
+        #preview-area {
+            display: none;
+            margin-top: 20px;
+        }
+        .canvas-wrapper {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        #slot-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        #slot-info {
+            font-style: italic;
+            color: var(--text-gray);
+            margin-top: 10px;
+        }
+        
+        /* Gaya untuk Tombol Aksi */
+        .form-button {
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1px solid transparent;
+            text-decoration: none;
+        }
+        .form-button.primary {
+            background-color: var(--primary-orange);
+            color: white;
+            border-color: var(--primary-orange);
+        }
+        .form-button.secondary {
+            background-color: #F0F2F5;
+            color: var(--text-dark);
+            border-color: var(--border-color);
+        }
+        .form-button.danger {
+            background-color: var(--danger-color);
+            color: white;
+            border-color: var(--danger-color);
+        }
+        .form-button:disabled {
+            background-color: var(--text-gray);
+            border-color: var(--text-gray);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* Gaya untuk daftar layout yang ada */
+        .layouts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .layout-card {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .layout-card img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            background-color: #f0f0f0;
+        }
+        .layout-card-content {
+            padding: 15px;
+        }
+        .layout-card-content h3 {
+            margin: 0 0 5px 0;
+        }
+        .layout-card-content p {
+            margin: 0;
+            color: var(--text-gray);
+            font-size: 12px;
+        }
+        
+        .message {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            display: none;
+            text-align: center;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <aside class="sidebar"></aside>
+        <main class="main-content">
+            <div class="content-header"><h1>Manage Photo Layouts</h1></div>
+            <div class="layout-container">
+                <div class="content-card">
+                    <h2>Add New Layout</h2>
+                    <form id="addLayoutForm">
+                        <div class="form-group">
+                            <label for="name">Layout Name</label>
+                            <input type="text" id="name" placeholder="e.g., Classic Duo Frame" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="border_image">Border Image (Frame)</label>
+                            <input type="file" id="border_image" accept="image/png, image/jpeg" required>
+                        </div>
+                        <div id="preview-area">
+                            <label>Use the buttons below to manage photo slots on the canvas.</label>
+                            <div class="canvas-wrapper">
+                                <canvas id="layoutCanvas"></canvas>
+                            </div>
+                             <div id="slot-controls">
+                                <button type="button" id="addSlotBtn" class="form-button secondary">Add Slot</button>
+                                <button type="button" id="removeSlotBtn" class="form-button danger">Remove Selected Slot</button>
+                            </div>
+                            <p id="slot-info">Slots placed: 0</p>
+                        </div>
+                        <hr style="border: none; border-top: 1px solid var(--border-color); margin: 25px 0;">
+                        <button type="submit" id="submitButton" class="form-button primary" disabled>Save Layout</button>
+                    </form>
+                    <div id="message" class="message" role="status" aria-live="polite"></div>
+                </div>
+                <div class="content-card">
+                    <h2>Existing Layouts</h2>
+                    <div id="layoutsGrid" class="layouts-grid"><p>Loading layouts...</p></div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="js/admin_sidebar.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- FUNGSI UNTUK MEMBUAT SIDEBAR ---
+            // Karena CSS sudah digabung, kita hanya perlu menyuntikkan HTML-nya.
+            
+            // Panggil fungsi untuk membuat sidebar
+            createSidebar('layouts');
+            
+            // --- Sisa Logika Aplikasi ---
+            const API_BASE_URL = 'http://127.0.0.1:8000';
+            const token = localStorage.getItem('adminToken');
+            if (!token) { window.location.href = 'admin_login.html'; return; }
+
+            let borderImageFile = null;
+            let canvas;
+
+            const form = document.getElementById('addLayoutForm');
+            const nameInput = document.getElementById('name');
+            const borderImageInput = document.getElementById('border_image');
+            const previewArea = document.getElementById('preview-area');
+            const slotInfo = document.getElementById('slot-info');
+            const submitButton = document.getElementById('submitButton');
+            const addSlotBtn = document.getElementById('addSlotBtn');
+            const removeSlotBtn = document.getElementById('removeSlotBtn');
+            const messageDiv = document.getElementById('message');
+            const layoutsGrid = document.getElementById('layoutsGrid');
+
+            function initializeCanvas(imageUrl, width, height) {
+                if (canvas) { canvas.dispose(); }
+
+                canvas = new fabric.Canvas('layoutCanvas');
+                canvas.setWidth(width);
+                canvas.setHeight(height);
+
+                fabric.Image.fromURL(imageUrl, (img) => {
+                    canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas), {
+                        scaleX: canvas.width / img.width,
+                        scaleY: canvas.height / img.height,
+                    });
+                });
+                
+                canvas.on('object:modified', checkFormValidity);
+                canvas.on('object:added', checkFormValidity);
+                canvas.on('object:removed', checkFormValidity);
+                
+                previewArea.style.display = 'block';
+                checkFormValidity();
+            }
+
+            borderImageInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    borderImageFile = file;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            initializeCanvas(e.target.result, img.width, img.height);
+                        };
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            nameInput.addEventListener('input', checkFormValidity);
+
+            addSlotBtn.addEventListener('click', () => {
+                if (!canvas) return;
+                const slotRect = new fabric.Rect({
+                    left: 20, top: 20,
+                    width: 100, height: 150,
+                    fill: 'rgba(245, 141, 61, 0.7)',
+                    stroke: 'white', strokeWidth: 2,
+                    cornerColor: 'white', cornerSize: 10, transparentCorners: false,
+                });
+                canvas.add(slotRect);
+                canvas.setActiveObject(slotRect);
+            });
+            
+            removeSlotBtn.addEventListener('click', () => {
+                if (!canvas) return;
+                const activeObject = canvas.getActiveObject();
+                if (activeObject) { canvas.remove(activeObject); }
+            });
+
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                submitButton.disabled = true;
+                submitButton.textContent = 'Saving...';
+                
+                const slotsData = canvas.getObjects('rect').map(rect => ({
+                    x_coord: Math.round(rect.left),
+                    y_coord: Math.round(rect.top),
+                    width: Math.round(rect.getScaledWidth()),
+                    height: Math.round(rect.getScaledHeight()),
+                }));
+
+                const formData = new FormData();
+                formData.append('name', nameInput.value);
+                formData.append('border_image', borderImageFile);
+                formData.append('slots_json', JSON.stringify(slotsData));
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/layouts/`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        body: formData
+                    });
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.detail || 'Failed to create layout');
+                    }
+                    displayMessage('Layout created successfully!', 'success');
+                    form.reset();
+                    if (canvas) { canvas.dispose(); }
+                    previewArea.style.display = 'none';
+                    borderImageFile = null;
+                    fetchLayouts();
+                } catch (error) {
+                    displayMessage(error.message, 'error');
+                } finally {
+                    checkFormValidity();
+                    submitButton.textContent = 'Save Layout';
+                }
+            });
+
+            function checkFormValidity() {
+                const isNameValid = nameInput.value.trim() !== '';
+                const isImageValid = borderImageFile !== null;
+                let areSlotsPlaced = false;
+                if(canvas) {
+                    areSlotsPlaced = canvas.getObjects('rect').length > 0;
+                }
+                slotInfo.textContent = `Slots placed: ${canvas ? canvas.getObjects('rect').length : 0}`;
+                submitButton.disabled = !(isNameValid && isImageValid && areSlotsPlaced);
+            }
+
+            function displayMessage(msg, type = 'error') {
+                messageDiv.textContent = msg;
+                messageDiv.className = `message ${type}`;
+                messageDiv.style.display = 'block';
+                setTimeout(() => { messageDiv.style.display = 'none'; }, 4000);
+            }
+
+            async function fetchLayouts() {
+                layoutsGrid.innerHTML = '<p>Loading layouts...</p>';
+                try {
+                    const response = await fetch(`${API_BASE_URL}/layouts/`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!response.ok) throw new Error('Could not fetch layouts');
+                    const layouts = await response.json();
+                    layoutsGrid.innerHTML = '';
+                    if (layouts.length === 0) {
+                        layoutsGrid.innerHTML = '<p>No layouts created yet.</p>';
+                        return;
+                    }
+                    layouts.forEach(layout => {
+                        const card = document.createElement('div');
+                        card.className = 'layout-card';
+                        card.innerHTML = `
+                            <img src="${API_BASE_URL}/${layout.border_image_path.replace(/\\/g, '/')}" alt="${layout.name}">
+                            <div class="layout-card-content">
+                                <h3>${layout.name}</h3>
+                                <p>${layout.slots.length} photo slots</p>
+                            </div>
+                        `;
+                        layoutsGrid.appendChild(card);
+                    });
+                } catch (error) {
+                    layoutsGrid.innerHTML = `<p style="color: var(--danger-color);">${error.message}</p>`;
+                }
+            }
+            
+            fetchLayouts();
+        });
+    </script>
+</body>
+</html>
