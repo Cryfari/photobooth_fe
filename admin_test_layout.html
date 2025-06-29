@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Layout - Admin Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* * GAYA CSS KONSISTEN DENGAN HALAMAN ADMIN LAINNYA 
+         * Saya menggunakan variabel dan class yang sama dari file-file Anda 
+         * untuk memastikan tampilan yang seragam dan profesional.
+         */
+        :root {
+            --sidebar-bg: #FFFFFF;
+            --main-bg: #F7F8FC;
+            --card-bg: #FFFFFF;
+            --primary-orange: #F58D3D;
+            --text-dark: #252733;
+            --text-gray: #9FA2B4;
+            --text-inactive: #4B5563;
+            --border-color: #DFE0EB;
+            --danger-color: #D73737;
+            --success-color: #29CC97;
+            --font-family: 'Mulish', sans-serif;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: var(--font-family);
+            background-color: var(--main-bg);
+            color: var(--text-dark);
+            font-size: 14px;
+        }
+
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 30px;
+        }
+
+        .sidebar {
+            width: 255px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .content-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .content-card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        .content-card h2 {
+            margin-top: 0;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .form-group select, .form-group input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            background-color: white; /* Pastikan background putih */
+        }
+        
+        #imageRequirementInfo {
+            margin-top: 10px;
+            font-size: 13px;
+            color: var(--text-gray);
+            font-weight: 600;
+        }
+
+        #imageRequirementInfo.valid {
+            color: var(--success-color);
+        }
+
+        #imageRequirementInfo.invalid {
+            color: var(--danger-color);
+        }
+
+        .form-button {
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1px solid transparent;
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+
+        .form-button.primary {
+            background-color: var(--primary-orange);
+            color: white;
+            border-color: var(--primary-orange);
+        }
+        .form-button:disabled {
+            background-color: var(--text-gray);
+            border-color: var(--text-gray);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        #resultCard img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .message {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            display: none;
+            text-align: center;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <aside class="sidebar"></aside>
+        <main class="main-content">
+            <div class="content-header"><h1>Test Layout Composition</h1></div>
+
+            <div class="content-card">
+                <h2>Layout Tester</h2>
+                <form id="testLayoutForm" novalidate>
+                    <div class="form-group">
+                        <label for="layoutSelect">1. Choose a Layout</label>
+                        <select id="layoutSelect" required>
+                            <option value="">Loading layouts...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="testImages">2. Upload Required Images</label>
+                        <input type="file" id="testImages" accept="image/*" multiple required disabled>
+                        <p id="imageRequirementInfo">Please select a layout first.</p>
+                    </div>
+
+                    <button type="submit" id="submitButton" class="form-button primary" disabled>Test Layout</button>
+                </form>
+                 <div id="message" class="message" role="alert"></div>
+            </div>
+
+            <div class="content-card" id="resultCard" style="display:none;">
+                <h2>Composition Result</h2>
+                <img id="resultImage" src="" alt="Composed layout result">
+                <a id="downloadLink" class="form-button primary" download="composed_layout.png">Download Image</a>
+            </div>
+
+        </main>
+    </div>
+    <script src="js/admin_sidebar.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Memastikan sidebar aktif pada menu yang tepat
+            createSidebar('layouts');
+            
+            const API_BASE_URL = 'http://127.0.0.1:8000';
+            const token = localStorage.getItem('adminToken');
+            if (!token) { window.location.href = 'admin_login.html'; return; }
+
+            // Referensi ke elemen-elemen DOM
+            const form = document.getElementById('testLayoutForm');
+            const layoutSelect = document.getElementById('layoutSelect');
+            const testImagesInput = document.getElementById('testImages');
+            const imageRequirementInfo = document.getElementById('imageRequirementInfo');
+            const submitButton = document.getElementById('submitButton');
+            const resultCard = document.getElementById('resultCard');
+            const resultImage = document.getElementById('resultImage');
+            const downloadLink = document.getElementById('downloadLink');
+            const messageDiv = document.getElementById('message');
+
+            /**
+             * Fungsi untuk memuat semua layout yang tersedia dari API
+             * dan memasukkannya ke dalam elemen <select>.
+             */
+            async function loadLayouts() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/layouts/`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!response.ok) throw new Error('Could not fetch layouts');
+                    
+                    const layouts = await response.json();
+                    
+                    layoutSelect.innerHTML = '<option value="">-- Select a layout --</option>';
+                    if (layouts.length === 0) {
+                        layoutSelect.innerHTML = '<option value="">No layouts available</option>';
+                        return;
+                    }
+                    
+                    layouts.forEach(layout => {
+                        const option = document.createElement('option');
+                        option.value = layout.id;
+                        option.textContent = `${layout.name} (${layout.slots.length} slots)`;
+                        // Menyimpan jumlah slot yang dibutuhkan di dalam dataset
+                        // Ini adalah cara yang bersih untuk menyimpan data terkait elemen.
+                        option.dataset.slots = layout.slots.length;
+                        layoutSelect.appendChild(option);
+                    });
+
+                } catch (error) {
+                    layoutSelect.innerHTML = '<option value="">Error loading layouts</option>';
+                    console.error(error);
+                }
+            }
+
+            /**
+             * Fungsi untuk memvalidasi keadaan form dan mengaktifkan/menonaktifkan tombol submit.
+             */
+            function validateFormState() {
+                const selectedOption = layoutSelect.options[layoutSelect.selectedIndex];
+                const layoutIsSelected = layoutSelect.value !== '';
+
+                if (!layoutIsSelected) {
+                    imageRequirementInfo.textContent = 'Please select a layout first.';
+                    imageRequirementInfo.className = '';
+                    submitButton.disabled = true;
+                    return;
+                }
+
+                const requiredSlots = parseInt(selectedOption.dataset.slots, 10);
+                const selectedFiles = testImagesInput.files.length;
+                
+                imageRequirementInfo.textContent = `Required: ${requiredSlots} images. Selected: ${selectedFiles}.`;
+
+                if (selectedFiles === requiredSlots) {
+                    imageRequirementInfo.classList.add('valid');
+                    imageRequirementInfo.classList.remove('invalid');
+                    submitButton.disabled = false;
+                } else {
+                    imageRequirementInfo.classList.add('invalid');
+                    imageRequirementInfo.classList.remove('valid');
+                    submitButton.disabled = true;
+                }
+            }
+            
+            // Event listener saat layout dipilih
+            layoutSelect.addEventListener('change', () => {
+                const layoutIsSelected = layoutSelect.value !== '';
+                testImagesInput.disabled = !layoutIsSelected;
+                validateFormState();
+            });
+
+            // Event listener saat file dipilih
+            testImagesInput.addEventListener('change', validateFormState);
+
+            // Event listener saat form disubmit
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                submitButton.disabled = true;
+                submitButton.textContent = 'Testing...';
+                messageDiv.style.display = 'none';
+                resultCard.style.display = 'none';
+
+                // Kita menggunakan FormData untuk mengirim file dan data form
+                const formData = new FormData();
+                formData.append('layout_id', layoutSelect.value);
+
+                for (const file of testImagesInput.files) {
+                    formData.append('test_images', file);
+                }
+                console.log('Submitting form data:', formData.get('test_images'));
+                try {
+                    const response = await fetch(`${API_BASE_URL}/layouts/test-layout`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json(); // Coba parse error dari JSON
+                        throw new Error(errorData.detail || 'Failed to compose layout.');
+                    }
+                    
+                    // Karena responsnya adalah gambar, kita proses sebagai blob
+                    const imageBlob = await response.blob();
+                    const imageUrl = URL.createObjectURL(imageBlob);
+
+                    resultImage.src = imageUrl;
+                    downloadLink.href = imageUrl;
+                    resultCard.style.display = 'block';
+
+                } catch (error) {
+                    messageDiv.textContent = error.message;
+                    messageDiv.className = 'message error';
+                    messageDiv.style.display = 'block';
+                } finally {
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Test Layout';
+                    // Panggil validasi lagi untuk reset state tombol jika perlu
+                    validateFormState();
+                }
+            });
+
+            // Mulai dengan memuat data layout
+            loadLayouts();
+        });
+    </script>
+</body>
+</html>

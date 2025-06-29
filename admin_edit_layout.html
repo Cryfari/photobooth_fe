@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Layout - Admin Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <style>
+        :root {
+            --sidebar-bg: #FFFFFF;
+            --main-bg: #F7F8FC;
+            --card-bg: #FFFFFF;
+            --primary-orange: #F58D3D;
+            --text-dark: #252733;
+            --text-gray: #9FA2B4;
+            --text-inactive: #4B5563;
+            --border-color: #DFE0EB;
+            --danger-color: #D73737;
+            --font-family: 'Mulish', sans-serif;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        body { margin: 0; font-family: var(--font-family); background-color: var(--main-bg); color: var(--text-dark); font-size: 14px; }
+        .admin-layout { display: flex; min-height: 100vh; }
+        .main-content { flex-grow: 1; padding: 30px; }
+        .sidebar { width: 255px; background-color: var(--sidebar-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; flex-shrink: 0; }
+        .content-header h1 { font-size: 1.5rem; font-weight: 700; margin: 0 0 30px 0; }
+        .content-card { background-color: var(--card-bg); border-radius: 8px; border: 1px solid var(--border-color); padding: 30px; }
+        .form-group { margin-bottom: 25px; }
+        .form-group label { display: block; font-weight: 700; margin-bottom: 8px; }
+        .form-group input[type="text"], .form-group input[type="file"] { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; font-size: 14px; }
+        .canvas-wrapper { border: 2px dashed var(--border-color); border-radius: 8px; margin: 10px 0; }
+        #slot-controls { display: flex; flex-wrap: wrap; gap: 10px; }
+        #currentBorderImage { max-width: 200px; height: auto; border-radius: 8px; border: 1px solid var(--border-color); margin-top: 10px; }
+        .form-actions { display: flex; justify-content: flex-end; gap: 15px; margin-top: 30px; border-top: 1px solid var(--border-color); padding-top: 20px; }
+        .form-button { padding: 10px 24px; border-radius: 8px; font-size: 0.9rem; font-weight: 700; cursor: pointer; border: 1px solid transparent; text-decoration: none; }
+        .form-button.primary { background-color: var(--primary-orange); color: white; border-color: var(--primary-orange); }
+        .form-button.primary:disabled { background-color: var(--text-gray); border-color: var(--text-gray); cursor: not-allowed; opacity: 0.7; }
+        .form-button.secondary { background-color: #F0F2F5; color: var(--text-dark); border-color: var(--border-color); }
+        .form-button.danger { background-color: var(--danger-color); color: white; border-color: var(--danger-color); }
+        .message { margin-top: 20px; padding: 12px; border-radius: 8px; display: none; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .success { background-color: #d4edda; color: #155724; }
+        .canvas-instruction {
+            font-size: 13px;
+            color: var(--text-gray);
+            font-style: italic;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <aside class="sidebar"></aside>
+        <main class="main-content">
+            <h1 id="pageTitle">Edit Layout</h1>
+            <div class="content-card">
+                <form id="editLayoutForm">
+                    <div class="form-group">
+                        <label for="name">Layout Name</label>
+                        <input type="text" id="name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Current Border Image</label>
+                        <img id="currentBorderImage" src="" alt="Current border">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="border_image">Upload New Border Image (Optional)</label>
+                        <input type="file" id="border_image" accept="image/png, image/jpeg">
+                        <small>If you upload a new image, the canvas will reset with the new dimensions.</small>
+                    </div>
+
+                    <div class="form-group">
+                         <label>Manage Photo Slots</label>
+                         <p class="canvas-instruction">
+                            Klik pada slot berwarna oranye di bawah untuk memindahkan atau mengubah ukurannya.
+                         </p>
+                         <div class="canvas-wrapper">
+                            <canvas id="layoutCanvas"></canvas>
+                        </div>
+                         <div id="slot-controls">
+                            <button type="button" id="addSlotBtn" class="form-button secondary">Add Slot</button>
+                            <button type="button" id="removeSlotBtn" class="form-button danger">Remove Selected Slot</button>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <a href="admin_manage_layouts.html" class="form-button secondary">Cancel</a>
+                        <button type="submit" id="submitButton" class="form-button primary">Save Changes</button>
+                    </div>
+                </form>
+                <div id="message" class="message"></div>
+            </div>
+        </main>
+    </div>
+    <script src="js/admin_sidebar.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            createSidebar('layouts');
+
+            const API_BASE_URL = 'http://127.0.0.1:8000';
+            const token = localStorage.getItem('adminToken');
+            if (!token) { window.location.href = 'admin_login.html'; return; }
+
+            const pageTitle = document.getElementById('pageTitle');
+            const form = document.getElementById('editLayoutForm');
+            const nameInput = document.getElementById('name');
+            const currentBorderImage = document.getElementById('currentBorderImage');
+            const borderImageInput = document.getElementById('border_image');
+            const submitButton = document.getElementById('submitButton');
+            const messageDiv = document.getElementById('message');
+            const addSlotBtn = document.getElementById('addSlotBtn');
+            const removeSlotBtn = document.getElementById('removeSlotBtn');
+            
+            let canvas;
+            let layoutId;
+
+            function initializeCanvas(imageUrl, slots = [], width, height) {
+                if (canvas) { canvas.dispose(); }
+
+                canvas = new fabric.Canvas('layoutCanvas');
+                canvas.setWidth(width);
+                canvas.setHeight(height);
+
+                fabric.Image.fromURL(imageUrl, (img) => {
+                    canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas), {
+                        scaleX: canvas.width / img.width,
+                        scaleY: canvas.height / img.height,
+                    });
+
+                    slots.forEach(slot => {
+                        const slotRect = new fabric.Rect({
+                            left: slot.x_coord, top: slot.y_coord,
+                            width: slot.width, height: slot.height,
+                            fill: 'rgba(245, 141, 61, 0.7)',
+                            stroke: 'white', strokeWidth: 2,
+                            cornerColor: 'white', cornerSize: 10, transparentCorners: false,
+                        });
+                        canvas.add(slotRect);
+                    });
+                }, { crossOrigin: 'Anonymous' });
+            }
+
+            async function loadLayoutData() {
+                const params = new URLSearchParams(window.location.search);
+                layoutId = params.get('id');
+                if (!layoutId) {
+                    alert('No layout ID specified.');
+                    window.location.href = 'admin_manage_layouts.html';
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/layouts/${layoutId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!response.ok) throw new Error('Could not fetch layout data.');
+                    
+                    const layout = await response.json();
+                    pageTitle.textContent = `Edit Layout: ${layout.name}`;
+                    nameInput.value = layout.name;
+                    
+                    const borderImageUrl = `${API_BASE_URL}/${layout.border_image_path.replace(/\\/g, '/')}`;
+                    console.log('Border Image URL:', borderImageUrl);
+                    currentBorderImage.src = borderImageUrl;
+
+                    const img = new Image();
+                    img.src = borderImageUrl;
+                    img.crossOrigin = "Anonymous";
+                    img.onload = () => {
+                         initializeCanvas(borderImageUrl+ `?v=${new Date().getTime()}`, layout.slots, img.width, img.height);
+                    };
+
+                } catch (error) {
+                    displayMessage(error.message, 'error');
+                }
+            }
+
+            addSlotBtn.addEventListener('click', () => {
+                if (!canvas) return;
+                const slotRect = new fabric.Rect({ left: 20, top: 20, width: 100, height: 150, fill: 'rgba(245, 141, 61, 0.7)', stroke: 'white', strokeWidth: 2, cornerColor: 'white', cornerSize: 10, transparentCorners: false });
+                canvas.add(slotRect);
+            });
+            
+            removeSlotBtn.addEventListener('click', () => {
+                if (!canvas) return;
+                const activeObject = canvas.getActiveObject();
+                if (activeObject) { canvas.remove(activeObject); }
+            });
+
+            borderImageInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const newImageUrl = e.target.result;
+                        currentBorderImage.src = newImageUrl;
+                        const img = new Image();
+                        img.onload = () => {
+                            const currentSlots = canvas.getObjects('rect').map(r => ({x_coord: r.left, y_coord: r.top, width: r.width, height: r.height }));
+                            initializeCanvas(newImageUrl, currentSlots, img.width, img.height);
+                        };
+                        img.src = newImageUrl;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                submitButton.disabled = true;
+                submitButton.textContent = 'Saving...';
+                
+                const slotsData = canvas.getObjects('rect').map(rect => ({
+                    x_coord: Math.round(rect.left),
+                    y_coord: Math.round(rect.top),
+                    width: Math.round(rect.getScaledWidth()),
+                    height: Math.round(rect.getScaledHeight()),
+                }));
+
+                const formData = new FormData();
+                formData.append('name', nameInput.value);
+                formData.append('slots_json', JSON.stringify(slotsData));
+                
+                if (borderImageInput.files[0]) {
+                    formData.append('border_image', borderImageInput.files[0]);
+                }
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/layouts/${layoutId}`, {
+                        method: 'PUT',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        body: formData
+                    });
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.detail || 'Failed to update layout');
+                    }
+                    alert('Layout updated successfully!');
+                    window.location.href = 'admin_manage_layouts.html';
+                } catch (error) {
+                    displayMessage(error.message, 'error');
+                } finally {
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Save Changes';
+                }
+            });
+            
+            function displayMessage(msg, type = 'error') {
+                messageDiv.textContent = msg;
+                messageDiv.className = `message ${type}`;
+                messageDiv.style.display = 'block';
+                setTimeout(() => { messageDiv.style.display = 'none'; }, 4000);
+            }
+
+            loadLayoutData();
+        });
+    </script>
+</body>
+</html>

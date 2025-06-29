@@ -1,20 +1,134 @@
 /**
  * admin_sidebar.js
- * Bertanggung jawab untuk membuat dan menyuntikkan navigasi sidebar
+ * Bertanggung jawab untuk membuat, menata, dan menyuntikkan navigasi sidebar
  * ke dalam halaman admin mana pun yang memanggilnya.
  */
 
+const injectSidebarCSS = () => {
+    // CSS untuk sidebar dan layout dasar admin.
+    // Dipindahkan dari file HTML untuk enkapsulasi.
+    const sidebarCSS = `
+        :root {
+            --sidebar-bg: #FFFFFF;
+            --main-bg: #F7F8FC;
+            --card-bg: #FFFFFF;
+            --primary-orange: #F58D3D;
+            --text-dark: #252733;
+            --text-gray: #9FA2B4;
+            --text-inactive: #4B5563;
+            --border-color: #DFE0EB;
+            --danger-color: #D73737;
+            --font-family: 'Mulish', sans-serif;
+        }
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            font-family: var(--font-family);
+            background-color: var(--main-bg);
+            color: var(--text-dark);
+            font-size: 14px;
+        }
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+        .sidebar {
+            width: 255px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        .main-content {
+            flex-grow: 1;
+            padding: 30px;
+        }
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 24px 30px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .sidebar-nav {
+            padding: 16px;
+        }
+        .sidebar-nav .nav-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-gray);
+            font-weight: 700;
+            padding: 8px 14px;
+            margin-bottom: 8px;
+        }
+        .sidebar-nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .sidebar-nav a {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 14px;
+            margin-bottom: 4px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text-inactive);
+            font-weight: 600;
+            transition: all 0.2s ease-in-out;
+        }
+        .sidebar-nav a:hover {
+            background-color: #F3F4F6;
+        }
+        .sidebar-nav a.active {
+            background-color: var(--primary-orange);
+            color: white;
+        }
+        .sidebar-nav a.active svg {
+            fill: white;
+        }
+        .sidebar-nav a.active:hover {
+            background-color: #E8832E;
+        }
+        .sidebar-nav svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--text-inactive);
+        }
+    `;
+
+    // Buat elemen <style> dan tambahkan ke <head>
+    const styleElement = document.createElement('style');
+    styleElement.id = 'sidebar-styles'; // Beri ID agar tidak terduplikasi
+    styleElement.innerHTML = sidebarCSS;
+
+    // Hanya tambahkan jika belum ada
+    if (!document.getElementById(styleElement.id)) {
+        document.head.appendChild(styleElement);
+    }
+};
+
 const createSidebar = (activePage = '') => {
-    // Tentukan path relatif untuk halaman
-    // Ini penting agar link berfungsi dari direktori mana pun.
-    const base_path = ''; // Kosongkan jika semua file ada di root, atau sesuaikan jika di dalam folder.
+    // 1. Suntikkan CSS ke dalam halaman
+    injectSidebarCSS();
+
+    // 2. Tentukan path relatif untuk halaman
+    const base_path = ''; // Kosongkan jika semua file ada di root
 
     const sidebarContainer = document.querySelector('.sidebar');
     if (!sidebarContainer) {
         console.error("Elemen '.sidebar' tidak ditemukan. Pastikan ada <aside class='sidebar'></aside> di HTML.");
         return;
     }
-
+    
+    // 3. Buat HTML untuk sidebar
     const sidebarHTML = `
         <div class="sidebar-header">
             <svg width="18" height="12" viewBox="0 0 18 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M17.7071 1.29289C18.0976 1.68342 18.0976 2.31658 17.7071 2.70711L14.4142 6L17.7071 9.29289C18.0976 9.68342 18.0976 10.3166 17.7071 10.7071C17.3166 11.0976 16.6834 11.0976 16.2929 10.7071L12.2929 6.70711C11.9024 6.31658 11.9024 5.68342 12.2929 5.29289L16.2929 1.29289C16.6834 0.902369 17.3166 0.902369 17.7071 1.29289Z" fill="#F59E0B"/><path fill-rule="evenodd" clip-rule="evenodd" d="M0 1C4.82841e-08 0.447715 0.447715 -4.8282e-08 1 0L13 1.04907e-06C13.5523 1.09736e-06 14 0.447716 14 1C14 1.55229 13.5523 2 13 2L1 2C0.447715 2 -4.82804e-08 1.55228 0 1Z" fill="#F59E0B"/><path fill-rule="evenodd" clip-rule="evenodd" d="M0 11C4.82841e-08 10.4477 0.447715 10 1 10L13 10C13.5523 10 14 10.4477 14 11C14 11.5523 13.5523 12 13 12L1 12C0.447715 12 -4.82804e-08 11.5523 0 11Z" fill="#F59E0B"/><path fill-rule="evenodd" clip-rule="evenodd" d="M0 6C4.82841e-08 5.44772 0.447715 5 1 5L9 5C9.55229 5 10 5.44772 10 6C10 6.55229 9.55229 7 9 7L1 7C0.447715 7 -4.82804e-08 6.55228 0 6Z" fill="#F59E0B"/></svg>
@@ -71,6 +185,7 @@ const createSidebar = (activePage = '') => {
     
     sidebarContainer.innerHTML = sidebarHTML;
 
+    // 4. Tambahkan event listener untuk logout
     const logoutButton = document.getElementById('logoutButton');
     if (logoutButton) {
         logoutButton.addEventListener('click', (e) => {
