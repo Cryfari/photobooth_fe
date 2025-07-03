@@ -8,10 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        /* * GAYA CSS KONSISTEN DENGAN HALAMAN ADMIN LAINNYA 
-         * Saya menggunakan variabel dan class yang sama dari file-file Anda 
-         * untuk memastikan tampilan yang seragam dan profesional.
-         */
+        /* GAYA CSS KONSISTEN DENGAN HALAMAN ADMIN LAINNYA */
         :root {
             --sidebar-bg: #FFFFFF;
             --main-bg: #F7F8FC;
@@ -229,9 +226,9 @@
                     
                     const layouts = await response.json();
                     
-                    layoutSelect.innerHTML = '<option value="">-- Select a layout --</option>';
+                    layoutSelect.innerHTML = '<option value="">-- Select a layout --</option>'; //
                     if (layouts.length === 0) {
-                        layoutSelect.innerHTML = '<option value="">No layouts available</option>';
+                        layoutSelect.innerHTML = '<option value="">No layouts available</option>'; //
                         return;
                     }
                     
@@ -244,9 +241,24 @@
                         option.dataset.slots = layout.slots.length;
                         layoutSelect.appendChild(option);
                     });
+                    
+                    // --- PERUBAHAN BARU DIMULAI DI SINI ---
+                    const params = new URLSearchParams(window.location.search);
+                    const layoutIdFromUrl = params.get('id');
+                    if (layoutIdFromUrl) {
+                        // Pastikan nilai dari URL ada di dalam pilihan dropdown
+                        const optionExists = Array.from(layoutSelect.options).some(opt => opt.value === layoutIdFromUrl);
+                        if (optionExists) {
+                            layoutSelect.value = layoutIdFromUrl;
+                            // Memicu event 'change' secara manual agar UI diperbarui
+                            layoutSelect.dispatchEvent(new Event('change'));
+                        }
+                    }
+                    // --- PERUBAHAN SELESAI DI SINI ---
+
 
                 } catch (error) {
-                    layoutSelect.innerHTML = '<option value="">Error loading layouts</option>';
+                    layoutSelect.innerHTML = '<option value="">Error loading layouts</option>'; //
                     console.error(error);
                 }
             }
@@ -259,7 +271,7 @@
                 const layoutIsSelected = layoutSelect.value !== '';
 
                 if (!layoutIsSelected) {
-                    imageRequirementInfo.textContent = 'Please select a layout first.';
+                    imageRequirementInfo.textContent = 'Please select a layout first.'; //
                     imageRequirementInfo.className = '';
                     submitButton.disabled = true;
                     return;
@@ -268,7 +280,7 @@
                 const requiredSlots = parseInt(selectedOption.dataset.slots, 10);
                 const selectedFiles = testImagesInput.files.length;
                 
-                imageRequirementInfo.textContent = `Required: ${requiredSlots} images. Selected: ${selectedFiles}.`;
+                imageRequirementInfo.textContent = `Required: ${requiredSlots} images. Selected: ${selectedFiles}.`; //
 
                 if (selectedFiles === requiredSlots) {
                     imageRequirementInfo.classList.add('valid');
@@ -295,7 +307,7 @@
             form.addEventListener('submit', async (event) => {
                 event.preventDefault();
                 submitButton.disabled = true;
-                submitButton.textContent = 'Testing...';
+                submitButton.textContent = 'Testing...'; //
                 messageDiv.style.display = 'none';
                 resultCard.style.display = 'none';
 
@@ -306,7 +318,7 @@
                 for (const file of testImagesInput.files) {
                     formData.append('test_images', file);
                 }
-                console.log('Submitting form data:', formData.get('test_images'));
+                
                 try {
                     const response = await fetch(`${API_BASE_URL}/layouts/test-layout`, {
                         method: 'POST',
@@ -329,11 +341,11 @@
 
                 } catch (error) {
                     messageDiv.textContent = error.message;
-                    messageDiv.className = 'message error';
+                    messageDiv.className = 'message error'; //
                     messageDiv.style.display = 'block';
                 } finally {
                     submitButton.disabled = false;
-                    submitButton.textContent = 'Test Layout';
+                    submitButton.textContent = 'Test Layout'; //
                     // Panggil validasi lagi untuk reset state tombol jika perlu
                     validateFormState();
                 }
