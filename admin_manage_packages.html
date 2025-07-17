@@ -342,7 +342,7 @@
         async function fetchPackages() {
             tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">Loading packages...</td></tr>';
             try {
-                const response = await fetch(`${API_BASE_URL}/packages/`, {
+                const response = await fetch(`${API_BASE_URL}/admin/packages/`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
@@ -392,7 +392,7 @@
 
             showDeleteConfirmation(packageName, async () => {
                 try {
-                    const response = await fetch(`${API_BASE_URL}/packages/${packageId}`, {
+                    const response = await fetch(`${API_BASE_URL}/admin/packages/${packageId}`, {
                         method: 'DELETE',
                         headers: { 'Authorization': `Bearer ${token}` }
                     });

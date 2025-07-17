@@ -13,192 +13,56 @@
             --main-bg: #F7F8FC;
             --card-bg: #FFFFFF;
             --primary-orange: #F58D3D;
+            --info-color: #3751FF;
+            --success-color: #29CC97;
             --text-dark: #252733;
             --text-gray: #9FA2B4;
             --text-inactive: #4B5563;
             --border-color: #DFE0EB;
             --danger-color: #D73737;
-            --success-color: #29CC97;
             --font-family: 'Mulish', sans-serif;
         }
-
-        *, *::before, *::after {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            font-family: var(--font-family);
-            background-color: var(--main-bg);
-            color: var(--text-dark);
-            font-size: 14px;
-        }
-
-        .admin-layout {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        .sidebar {
-            width: 255px;
-            background-color: var(--sidebar-bg);
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            flex-shrink: 0;
-        }
-
-        .main-content {
-            flex-grow: 1;
-            padding: 30px;
-        }
-
-        .sidebar-header {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            padding: 24px 30px;
-            font-size: 1.2rem;
-            font-weight: 700;
-            letter-spacing: 0.3px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .sidebar-nav {
-            padding: 16px;
-        }
-
-        .sidebar-nav .nav-title {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            color: var(--text-gray);
-            font-weight: 700;
-            padding: 8px 14px;
-            margin-bottom: 8px;
-        }
-
-        .sidebar-nav ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .sidebar-nav a {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            padding: 12px 14px;
-            margin-bottom: 4px;
-            border-radius: 8px;
-            text-decoration: none;
-            color: var(--text-inactive);
-            font-weight: 600;
-            transition: all 0.2s ease-in-out;
-        }
-        
-        .sidebar-nav a:hover {
-            background-color: #F3F4F6;
-        }
-
-        .sidebar-nav a.active {
-            background-color: var(--primary-orange);
-            color: white;
-        }
-
-        .sidebar-nav a.active svg {
-            fill: white;
-        }
-        
-        .sidebar-nav a.active:hover {
-            background-color: #E8832E;
-        }
-
-        .sidebar-nav svg {
-            width: 20px;
-            height: 20px;
-            fill: var(--text-inactive);
-        }
-        
-        .content-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-
-        .content-header h1 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin: 0;
-        }
-
-        .history-button {
-            background-color: var(--card-bg);
-            color: var(--text-dark);
-            border: 1px solid var(--border-color);
-            padding: 10px 24px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 700;
-            cursor: pointer;
-            text-decoration: none;
-        }
-        
-        .content-card {
-            background-color: var(--card-bg);
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-        }
-
-        .table-container {
-            width: 100%;
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th, td {
-            padding: 20px 30px;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
-            vertical-align: middle;
-            white-space: nowrap;
-        }
-
-        th {
-            color: var(--text-gray);
-            font-weight: 700;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 0.2px;
-        }
-
-        table tr:last-child td {
-            border-bottom: none;
-        }
-        
-        .status-badge {
-            padding: 4px 12px;
-            border-radius: 100px;
-            font-weight: 700;
-            font-size: 0.8rem;
-        }
-        .status-badge.active {
-            color: var(--success-color);
-            background-color: #EAFBF5;
-        }
-        .status-badge.used {
-            color: var(--danger-color);
-            background-color: #FEE2E2;
-        }
-        .status-badge.expired {
-            color: var(--text-gray);
-            background-color: #F2F2F2;
-        }
-
+        *, *::before, *::after { box-sizing: border-box; }
+        body { margin: 0; font-family: var(--font-family); background-color: var(--main-bg); color: var(--text-dark); font-size: 14px; }
+        .admin-layout { display: flex; min-height: 100vh; }
+        .sidebar { width: 255px; background-color: var(--sidebar-bg); border-right: 1px solid var(--border-color); flex-shrink: 0; }
+        .main-content { flex-grow: 1; padding: 30px; }
+        .content-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .content-header h1 { font-size: 1.5rem; font-weight: 700; margin: 0; }
+        .history-button { background-color: var(--card-bg); color: var(--text-dark); border: 1px solid var(--border-color); padding: 10px 24px; border-radius: 8px; font-size: 0.9rem; font-weight: 700; cursor: pointer; text-decoration: none; }
+        .content-card { background-color: var(--card-bg); border-radius: 8px; border: 1px solid var(--border-color); }
+        .table-container { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 20px 30px; text-align: left; border-bottom: 1px solid var(--border-color); vertical-align: middle; white-space: nowrap; }
+        th { color: var(--text-gray); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.2px; }
+        table tr:last-child td { border-bottom: none; }
+        .status-badge { padding: 4px 12px; border-radius: 100px; font-weight: 700; font-size: 0.8rem; }
+        .status-badge.active { color: var(--success-color); background-color: #EAFBF5; }
+        .status-badge.used { color: var(--danger-color); background-color: #FEE2E2; }
+        .status-badge.expired { color: var(--text-gray); background-color: #F2F2F2; }
+        .actions-group { display: flex; gap: 8px; }
+        .action-button { background: none; border: 1px solid var(--border-color); color: var(--text-dark); border-radius: 6px; padding: 6px 12px; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; }
+        .action-button.reactivate { color: var(--info-color); border-color: var(--info-color); }
+        .action-button.reactivate:hover { background-color: var(--info-color); color: white; }
+        .action-button.view-print { color: var(--success-color); border-color: var(--success-color); }
+        .action-button.view-print:hover { background-color: var(--success-color); color: white; }
+        .action-button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .message { margin: 0 0 20px 0; padding: 12px; border-radius: 8px; text-align: center; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .success { background-color: #d4edda; color: #155724; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(37, 39, 51, 0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0s 0.3s; }
+        .modal-overlay.visible { opacity: 1; visibility: visible; transition: opacity 0.3s ease; }
+        .modal-content { background-color: var(--card-bg); padding: 30px; border-radius: 8px; width: 90%; max-width: 400px; text-align: center; transform: scale(0.95); transition: transform 0.3s ease; }
+        .modal-overlay.visible .modal-content { transform: scale(1); }
+        .modal-content h2 { margin: 0 0 20px 0; font-size: 1.2rem; color: var(--text-dark); }
+        .modal-content p { margin: 0 0 25px 0; color: var(--text-gray); line-height: 1.5; }
+        .modal-actions { display: flex; gap: 15px; }
+        .modal-button { flex-grow: 1; padding: 10px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 14px; border: 1px solid transparent; }
+        .modal-button.cancel { background-color: var(--card-bg); border-color: var(--border-color); color: var(--text-gray); }
+        .modal-button.confirm { background-color: var(--info-color); color: white; }
+        #qrModalImage { max-width: 100%; height: auto; border-radius: 8px; margin-bottom: 20px; }
+        #qrModalDetails p { margin: 5px 0; color: var(--text-dark); text-align: left; font-size: 14px; word-break: break-all; }
+        #qrModalDetails p strong { color: var(--text-gray); font-weight: 600; display: inline-block; width: 80px; }
     </style>
 </head>
 <body>
@@ -210,6 +74,8 @@
                 <h1>Ticket History</h1>
                 <a href="admin_add_ticket.html" class="history-button">Back to Generate</a>
             </div>
+            
+            <div id="statusMessage" class="message" style="display: none;"></div>
 
             <div class="content-card">
                 <div class="table-container">
@@ -221,6 +87,7 @@
                                 <th>Status</th>
                                 <th>Created At</th>
                                 <th>Expires At</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="ticketsTableBody"></tbody>
@@ -228,6 +95,33 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <div id="confirmationModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Reactivate Ticket</h2>
+            <p id="modalText">Are you sure you want to reactivate this ticket?</p>
+            <div class="modal-actions">
+                <button id="modalCancelBtn" class="modal-button cancel">Cancel</button>
+                <button id="modalConfirmBtn" class="modal-button confirm">Reactivate</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="qrModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Ticket Details</h2>
+            <img id="qrModalImage" src="" alt="Ticket QR Code">
+            <div id="qrModalDetails" style="margin-bottom: 25px;">
+                <p><strong>Token:</strong> <span id="qrModalToken"></span></p>
+                <p><strong>Package:</strong> <span id="qrModalPackage"></span></p>
+                <p><strong>Expires:</strong> <span id="qrModalExpires"></span></p>
+            </div>
+            <div class="modal-actions">
+                <button id="qrModalCloseBtn" class="modal-button cancel">Close</button>
+                <button id="qrModalPrintBtn" class="modal-button confirm">Print</button>
+            </div>
+        </div>
     </div>
 
     <script src="js/admin_sidebar.js"></script>
@@ -242,9 +136,51 @@
         if (!token) window.location.href = 'admin_login.html';
 
         const tableBody = document.getElementById('ticketsTableBody');
+        const statusMessageEl = document.getElementById('statusMessage');
+        
+        // Modal Konfirmasi Reaktivasi
+        const confirmModal = document.getElementById('confirmationModal');
+        const modalText = document.getElementById('modalText');
+        const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+        const modalCancelBtn = document.getElementById('modalCancelBtn');
+
+        // Modal QR
+        const qrModal = document.getElementById('qrModal');
+        const qrModalImage = document.getElementById('qrModalImage');
+        const qrModalToken = document.getElementById('qrModalToken');
+        const qrModalPackage = document.getElementById('qrModalPackage');
+        const qrModalExpires = document.getElementById('qrModalExpires');
+        const qrModalPrintBtn = document.getElementById('qrModalPrintBtn');
+        const qrModalCloseBtn = document.getElementById('qrModalCloseBtn');
+        
+        function showStatusMessage(message, type = 'success') {
+            statusMessageEl.textContent = message;
+            statusMessageEl.className = `message ${type}`;
+            statusMessageEl.style.display = 'block';
+            setTimeout(() => { statusMessageEl.style.display = 'none'; }, 4000);
+        }
+
+        function showConfirmationModal(ticketToken) {
+            return new Promise(resolve => {
+                modalText.textContent = `Are you sure you want to reactivate ticket ${ticketToken}? The expiration time will be reset.`;
+                confirmModal.classList.add('visible');
+
+                const onConfirm = () => { cleanup(); resolve(true); };
+                const onCancel = () => { cleanup(); resolve(false); };
+                
+                const cleanup = () => {
+                    confirmModal.classList.remove('visible');
+                    modalConfirmBtn.removeEventListener('click', onConfirm);
+                    modalCancelBtn.removeEventListener('click', onCancel);
+                };
+
+                modalConfirmBtn.addEventListener('click', onConfirm, { once: true });
+                modalCancelBtn.addEventListener('click', onCancel, { once: true });
+            });
+        }
 
         async function loadTickets() {
-            tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">Loading tickets...</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">Loading tickets...</td></tr>';
             try {
                 const response = await fetch(`${API_BASE_URL}/tickets/`, {
                     headers: { 'Authorization': `Bearer ${token}` }
@@ -257,13 +193,16 @@
                 tableBody.innerHTML = '';
 
                 if (tickets.length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">No tickets have been generated yet.</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">No tickets have been generated yet.</td></tr>';
                     return;
                 }
 
                 tickets.forEach(ticket => {
                     const row = document.createElement('tr');
                     let statusHtml;
+                    let actionHtml = '<div class="actions-group">';
+
+                    const isInactive = ticket.is_used || !ticket.is_active;
 
                     if (ticket.is_used) {
                         statusHtml = '<span class="status-badge used">Used</span>';
@@ -273,25 +212,127 @@
                         statusHtml = '<span class="status-badge active">Active</span>';
                     }
                     
-                    const localeOptions = {
-                        year: 'numeric', month: 'long', day: 'numeric',
-                        hour: '2-digit', minute: '2-digit'
-                    };
+                    if (isInactive) {
+                        actionHtml += `<button class="action-button reactivate" data-token="${ticket.token}">Reactivate</button>`;
+                    }
+
+                    const expiresDate = new Date(ticket.expires_at).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' });
+                    
+                    actionHtml += `<button class="action-button view-print" 
+                        data-token="${ticket.token}"
+                        data-qrcode-url="${API_BASE_URL}${ticket.qrcode_url}"
+                        data-package-name="${ticket.package.name}"
+                        data-expires-at="${expiresDate}">View & Print</button>`;
+                    actionHtml += '</div>';
+                    
+                    const localeOptions = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
 
                     row.innerHTML = `
                         <td><strong>${ticket.token}</strong></td>
                         <td>${ticket.package.name}</td>
                         <td>${statusHtml}</td>
                         <td>${new Date(ticket.created_at).toLocaleString('id-ID', localeOptions)}</td>
-                        <td>${new Date(ticket.expires_at).toLocaleString('id-ID', localeOptions)}</td>
+                        <td>${expiresDate}</td>
+                        <td>${actionHtml}</td>
                     `;
                     tableBody.appendChild(row);
                 });
             } catch (error) {
                 console.error(error);
-                tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">Error loading data.</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">Error loading data.</td></tr>';
             }
         }
+        
+        function createPrintableTicketHTML(qrUrl, token, packageName, expires) {
+            return `
+                <html>
+                <head>
+                    <title>Print Ticket</title>
+                    <style>
+                        @media print { body { -webkit-print-color-adjust: exact; } @page { margin: 1cm; } }
+                        body { text-align:center; margin-top: 20px; font-family: 'Segoe UI', Arial, sans-serif; color: #333; } 
+                        img { width: 250px; height: 250px; }
+                        h2, p { margin: 8px 0; }
+                        strong { font-family: 'Courier New', monospace; background-color: #f0f0f0; padding: 2px 6px; border-radius: 4px; }
+                    </style>
+                </head>
+                <body>
+                    <h2>Scan for AI Photobooth</h2>
+                    <img src="${qrUrl}" alt="Ticket QR Code">
+                    <p>Token: <strong>${token}</strong></p>
+                    <p>Package: ${packageName}</p>
+                    <p>Expires: ${expires}</p>
+                </body>
+                </html>
+            `;
+        }
+
+        tableBody.addEventListener('click', async (event) => {
+            const button = event.target.closest('.action-button');
+            if (!button) return;
+
+            if (button.classList.contains('reactivate')) {
+                const ticketToken = button.dataset.token;
+                const confirmed = await showConfirmationModal(ticketToken);
+                if (!confirmed) return;
+
+                button.disabled = true;
+                button.textContent = '...';
+                try {
+                    const response = await fetch(`${API_BASE_URL}/tickets/reactivate/${ticketToken}`, {
+                        method: 'PUT',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.detail || 'Failed to reactivate ticket.');
+                    showStatusMessage(`Ticket ${ticketToken} has been reactivated.`, 'success');
+                    loadTickets();
+                } catch (error) {
+                    showStatusMessage(error.message, 'error');
+                    button.disabled = false;
+                    button.textContent = 'Reactivate';
+                }
+            }
+
+            if (button.classList.contains('view-print')) {
+                const { token, qrcodeUrl, packageName, expiresAt } = button.dataset;
+                qrModalImage.src = qrcodeUrl;
+                qrModalToken.textContent = token;
+                qrModalPackage.textContent = packageName;
+                qrModalExpires.textContent = expiresAt;
+                qrModalPrintBtn.dataset.qrcodeUrl = qrcodeUrl;
+                qrModalPrintBtn.dataset.token = token;
+                qrModalPrintBtn.dataset.packageName = packageName;
+                qrModalPrintBtn.dataset.expiresAt = expiresAt;
+                qrModal.classList.add('visible');
+            }
+        });
+        
+        qrModalPrintBtn.addEventListener('click', () => {
+            const { qrcodeUrl, token, packageName, expiresAt } = qrModalPrintBtn.dataset;
+            const printableHTML = createPrintableTicketHTML(qrcodeUrl, token, packageName, expiresAt);
+            const printWindow = window.open('', '_blank');
+            printWindow.document.open();
+            printWindow.document.write(printableHTML);
+            printWindow.document.close();
+            setTimeout(() => {
+                printWindow.focus();
+                printWindow.print();
+            }, 500);
+        });
+
+        qrModalCloseBtn.addEventListener('click', () => qrModal.classList.remove('visible'));
+        qrModal.addEventListener('click', (event) => {
+            if (event.target === qrModal) {
+                qrModal.classList.remove('visible');
+            }
+        });
+        
+        confirmModal.addEventListener('click', (event) => {
+             if (event.target === confirmModal) {
+                confirmModal.classList.remove('visible');
+            }
+        });
     </script>
 </body>
 </html>

@@ -263,7 +263,7 @@
 
         async function loadPackageData(id) {
             try {
-                const response = await fetch(`${API_BASE_URL}/packages/${id}`, {
+                const response = await fetch(`${API_BASE_URL}/admin/packages/${id}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
@@ -317,7 +317,7 @@
             submitButton.textContent = 'Saving...';
 
             try {
-                const response = await fetch(`${API_BASE_URL}/packages/${packageId}`, {
+                const response = await fetch(`${API_BASE_URL}/admin/packages/${packageId}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',

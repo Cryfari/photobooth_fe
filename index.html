@@ -4,12 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Kdam+Thmor+Pro&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kdam+Thmor+Pro&display=swap" rel="stylesheet">
     <title>AI Photobooth</title>
     
     <style>
-        
         :root {
             --bg-color: #fcf6e9;
             --text-color: #e67e22;
@@ -50,20 +49,22 @@
         <h1>Welcome to AI Photobooth</h1>
         
         <button class="start-button" id="startButton">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false">
-        <path d="M8 5v14l11-7z"></path>
-    </svg>
-    <span>START</span>
-</button>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false">
+                <path d="M8 5v14l11-7z"></path>
+            </svg>
+            <span>START</span>
+        </button>
     </main>
     
     <script>
         const startButton = document.getElementById('startButton');
 
         startButton.addEventListener('click', () => {
-            console.log('Tombol START ditekan! Mengarahkan ke halaman webcam...');
+            console.log('Tombol START ditekan! Mengarahkan ke halaman validasi tiket...');
             
-            window.location.href = 'user_take_photo.html'; 
+            // --- PERUBAHAN DI SINI ---
+            // Mengarahkan ke halaman validasi tiket yang baru
+            window.location.href = 'user_validate_ticket.html'; 
         });
     </script>
 

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validasi Tiket - AI Photobooth</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kdam+Thmor+Pro&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        :root {
+            --bg-color: #fcf6e9;
+            --text-color: #e67e22;
+            --button-bg-color: #e67e22;
+            --button-text-color: #FFFFFF;
+            --input-border-color: #e0e0e0;
+            --input-focus-border-color: #e67e22;
+            --error-bg-color: #f8d7da;
+            --error-text-color: #721c24;
+            --font-family: 'Kdam Thmor Pro', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; font-family: var(--font-family); background-color: var(--bg-color); color: var(--text-color); height: 100%; }
+        main { display: flex; justify-content: center; align-items: center; flex-direction: column; text-align: center; min-height: 100vh; padding: 20px; }
+        h1 { font-size: clamp(1.8rem, 5vw, 2.8rem); font-weight: 600; letter-spacing: 2px; text-transform: uppercase; margin: 0 0 1.5rem 0; }
+        .validation-form { width: 100%; max-width: 400px; }
+        #ticketCodeInput { width: 100%; padding: 14px 20px; font-size: 1.2rem; font-family: inherit; text-align: center; letter-spacing: 2px; text-transform: uppercase; border: 2px solid var(--input-border-color); border-radius: 8px; margin-bottom: 20px; transition: border-color 0.2s ease; }
+        #ticketCodeInput:focus { outline: none; border-color: var(--input-focus-border-color); }
+        .button-group { display: flex; flex-direction: column; gap: 15px; }
+        .form-button { width: 100%; padding: 14px; font-family: inherit; font-size: 1.2rem; font-weight: 600; letter-spacing: 2px; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.2s, transform 0.2s; }
+        #validateButton { background-color: var(--button-bg-color); color: var(--button-text-color); }
+        #validateButton:hover:not(:disabled) { background-color: #d35400; transform: translateY(-2px); }
+        #validateButton:disabled { background-color: #cccccc; cursor: not-allowed; transform: none; }
+        /* Tombol Scan Baru */
+        #scanQrButton { background-color: transparent; color: var(--button-bg-color); border: 2px solid var(--button-bg-color); }
+        #scanQrButton:hover { background-color: rgba(230, 126, 34, 0.1); }
+        .message-box { margin-top: 20px; padding: 12px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; display: none; background-color: var(--error-bg-color); color: var(--error-text-color); }
+        
+        /* 2. Style untuk container scanner (overlay) */
+        #scanner-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; }
+        #qr-reader { width: 90%; max-width: 500px; background-color: black; border-radius: 8px; overflow: hidden; }
+        #closeScannerButton { margin-top: 20px; padding: 10px 30px; font-family: inherit; font-size: 1rem; color: white; background-color: var(--button-bg-color); border: none; border-radius: 8px; cursor: pointer; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Masukkan Kode Tiket Anda</h1>
+        
+        <form id="validationForm" class="validation-form" novalidate>
+            <input type="text" id="ticketCodeInput" placeholder="KODE-TIKET" required>
+            <div class="button-group">
+                <button type="submit" id="validateButton" class="form-button">VALIDASI</button>
+                <button type="button" id="scanQrButton" class="form-button">SCAN QR CODE</button>
+            </div>
+        </form>
+
+        <div id="messageBox" class="message-box"></div>
+    </main>
+
+    <div id="scanner-container" class="hidden">
+        <div id="qr-reader"></div>
+        <button id="closeScannerButton">Tutup</button>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // === Referensi Elemen DOM ===
+            const validationForm = document.getElementById('validationForm');
+            const ticketInput = document.getElementById('ticketCodeInput');
+            const validateButton = document.getElementById('validateButton');
+            const messageBox = document.getElementById('messageBox');
+            // Element baru
+            const scanQrButton = document.getElementById('scanQrButton');
+            const scannerContainer = document.getElementById('scanner-container');
+            const closeScannerButton = document.getElementById('closeScannerButton');
+            
+            const API_BASE_URL = 'http://127.0.0.1:8000';
+            let html5QrCode = null; // Variabel untuk menyimpan instance scanner
+
+            // === Fungsi-fungsi Utama ===
+
+            /**
+             * Menampilkan pesan kepada pengguna.
+             */
+            function showMessage(message) {
+                messageBox.textContent = message;
+                messageBox.style.display = 'block';
+            }
+
+            /**
+             * Mengatur status tombol validasi.
+             */
+            function setButtonState(disabled, text) {
+                validateButton.disabled = disabled;
+                if(text) validateButton.textContent = text;
+            }
+            
+            /**
+             * Fungsi yang menangani proses validasi tiket ke API.
+             * @param {string} ticketCode - Kode tiket yang akan divalidasi.
+             */
+            async function validateTicket(ticketCode) {
+                if (!ticketCode) {
+                    showMessage('Kode tiket tidak valid.');
+                    return;
+                }
+                
+                setButtonState(true, 'MEMVALIDASI...');
+                messageBox.style.display = 'none';
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/tickets/validate/${ticketCode}`, {
+                        method: 'POST'
+                    });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.detail || 'Terjadi kesalahan.');
+
+                    console.log('Validasi sukses:', data);
+                    sessionStorage.setItem('validatedPackage', JSON.stringify(data.package));
+                    sessionStorage.setItem('ticketCode', data.ticket_code);
+                    window.location.href = 'user_take_photo.html';
+
+                } catch (error) {
+                    console.error('Error validasi:', error);
+                    showMessage(error.message);
+                    setButtonState(false, 'VALIDASI');
+                }
+            }
+            
+            // --- 4. Logika untuk QR Scanner ---
+
+            /**
+             * Callback yang dijalankan ketika QR code berhasil dipindai.
+             */
+            function onScanSuccess(decodedText, decodedResult) {
+                console.log(`Kode terdeteksi = ${decodedText}`, decodedResult);
+                stopScanner();
+                ticketInput.value = decodedText; // Isi input dengan hasil scan
+                validateTicket(decodedText); // Langsung validasi tiket
+            }
+
+            /**
+             * Callback untuk error atau jika tidak ada QR code yang ditemukan.
+             */
+            function onScanFailure(error) {
+                // Biarkan kosong atau tambahkan log jika perlu, agar tidak spam console.
+                console.warn(`Error pemindaian = ${error}`);
+            }
+
+            /**
+             * Fungsi untuk memulai kamera dan scanner.
+             */
+            function startScanner() {
+                scannerContainer.classList.remove('hidden');
+                // Inisialisasi scanner jika belum ada
+                if (!html5QrCode) {
+                    html5QrCode = new Html5Qrcode("qr-reader");
+                }
+                // Konfigurasi scanner untuk menggunakan kamera belakang
+                html5QrCode.start(
+                    { facingMode: "environment" }, 
+                    {
+                        fps: 10, // Frame per second
+                        qrbox: { width: 250, height: 250 } // Ukuran kotak pemindaian
+                    },
+                    onScanSuccess,
+                    onScanFailure
+                ).catch(err => {
+                    console.error("Gagal memulai scanner", err);
+                    showMessage("Gagal mengakses kamera. Mohon berikan izin.");
+                    stopScanner(); // Tutup jika gagal
+                });
+            }
+
+            /**
+             * Fungsi untuk menghentikan kamera dan menyembunyikan scanner.
+             */
+            function stopScanner() {
+                if (html5QrCode && html5QrCode.isScanning) {
+                    html5QrCode.stop().catch(err => console.error("Gagal menghentikan scanner.", err));
+                }
+                scannerContainer.classList.add('hidden');
+            }
+
+            // === Event Listeners ===
+            
+            // Event listener untuk submit form (input manual)
+            validationForm.addEventListener('submit', (event) => {
+                event.preventDefault();
+                const ticketCode = ticketInput.value.trim().toUpperCase();
+                validateTicket(ticketCode);
+            });
+
+            // Event listener untuk tombol "SCAN QR CODE"
+            scanQrButton.addEventListener('click', startScanner);
+
+            // Event listener untuk tombol "Tutup" pada scanner
+            closeScannerButton.addEventListener('click', stopScanner);
+        });
+    </script>
+</body>
+</html>

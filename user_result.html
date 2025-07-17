@@ -203,7 +203,7 @@
             return new Blob([u8arr], {type:mime});
         }
 
-        async function processSingleImage(templateName, capturedImageDataUrl, cardElement) {
+        async function processSingleImage(templateName, capturedImageDataUrl, cardElement, ticketCode) {
             const imageContainer = cardElement.querySelector('.image-container');
             const qrContainer = cardElement.querySelector('.qr-container');
             
@@ -217,10 +217,12 @@
             const imageBlob = dataURLtoBlob(capturedImageDataUrl);
             const formData = new FormData();
             formData.append('file', imageBlob, 'capture.png');
+            formData.append('ticket_token', ticketCode);
 
             try {
                 const response = await fetch(`${API_BASE_URL}/generate-image-upload/${templateName}`, {
                     method: 'POST',
+                    headers: { 'X-Ticket-Token': ticketCode },
                     body: formData
                 });
                 const data = await response.json();
@@ -266,10 +268,11 @@
             finishedButton.disabled = true;
             const capturedImageDataUrl = sessionStorage.getItem('capturedImage');
             const selectedTemplatesStr = sessionStorage.getItem('selectedTemplateNames');
+            const ticketCode = sessionStorage.getItem('ticketCode');
             
-            if (!capturedImageDataUrl || !selectedTemplatesStr) {
-                showStatus("Error: Data gambar atau template tidak ditemukan.", true);
-                setTimeout(() => window.location.href = 'user_take_photo.html', 3000);
+            if (!capturedImageDataUrl || !selectedTemplatesStr || !ticketCode) {
+                showStatus("Error: Sesi tidak valid (gambar, template, atau tiket tidak ditemukan).", true);
+                setTimeout(() => window.location.href = 'user_validate_ticket.html', 3000);
                 return;
             }
 
@@ -292,7 +295,7 @@
                 for (const templateName of selectedTemplates) {
                     showStatus(`Memproses gambar ${index + 1} dari ${selectedTemplates.length}...`);
                     const currentCard = cardElements[index];
-                    await processSingleImage(templateName, capturedImageDataUrl, currentCard);
+                    await processSingleImage(templateName, capturedImageDataUrl, currentCard, ticketCode);
                     
                     if (index < selectedTemplates.length - 1) {
                         await delay(5000);
@@ -325,6 +328,7 @@
         finishedButton.addEventListener('click', () => {
             sessionStorage.removeItem('capturedImage');
             sessionStorage.removeItem('selectedTemplateNames');
+            sessionStorage.removeItem('ticketCode');
             window.location.href = 'index.html';
         });
 
