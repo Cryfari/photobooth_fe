@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pilih Template - AI Photobooth</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kdam+Thmor+Pro&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-color: #D9773B;
@@ -13,23 +16,105 @@
             --button-hover-bg-color: rgba(255, 255, 255, 0.1);
             --selection-outline-color: #FFFFFF;
             --selection-checkmark-bg: #D9773B;
-            --font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            --font-family: 'Kdam Thmor Pro', 'Segoe UI', sans-serif;
+            --panel-bg: rgba(0, 0, 0, 0.1);
+            --active-photo-border: #FFFFFF;
         }
 
         *, *::before, *::after { box-sizing: border-box; }
-        html, body { height: 100%; margin: 0; padding: 0; font-family: var(--font-family); background-color: var(--bg-color); color: var(--text-color); }
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
 
-        body { display: flex; flex-direction: column; }
-        .main-content { flex-grow: 1; padding: 20px 40px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
-        h1 { text-align: center; font-size: clamp(1.8rem, 4vw, 2.5rem); margin-top: 20px; margin-bottom: 1rem; }
-        .subtitle { text-align: center; font-size: 1.1rem; margin-bottom: 40px; opacity: 0.9; }
-        
+        .page-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 20px 40px;
+        }
+
+        .header-section {
+            text-align: center;
+            flex-shrink: 0;
+            padding-bottom: 20px;
+        }
+        h1 {
+            font-size: clamp(1.8rem, 4vw, 2.5rem);
+            margin: 0;
+        }
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-top: 8px;
+        }
+
+        .content-body {
+            flex-grow: 1;
+            display: flex;
+            gap: 30px;
+            overflow: hidden;
+        }
+
+        .captured-photos-panel {
+            flex: 0 0 200px;
+            background-color: var(--panel-bg);
+            border-radius: 20px;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .captured-photo-item {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            border-radius: 15px;
+            overflow: hidden;
+            flex-shrink: 0;
+            position: relative;
+            cursor: pointer;
+            border: 4px solid transparent;
+            transition: border-color 0.2s ease;
+        }
+        .captured-photo-item.active {
+            border-color: var(--active-photo-border);
+        }
+        .captured-photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .assigned-template-name {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            font-size: 0.8rem;
+            text-align: center;
+            padding: 5px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .template-selection-panel {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
         .templates-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 25px;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 20px;
             width: 100%;
-            max-width: 1200px;
         }
         
         .template-item {
@@ -42,11 +127,9 @@
             outline-offset: -4px;
             transition: transform 0.2s ease, outline-color 0.2s ease;
         }
-        
         .template-item:hover {
             transform: scale(1.03);
         }
-        
         .template-item img {
             width: 100%;
             height: 100%;
@@ -54,7 +137,6 @@
             display: block;
             transition: filter 0.2s ease;
         }
-
         .template-item .checkmark {
             position: absolute;
             top: 12px;
@@ -72,7 +154,6 @@
             transition: all 0.2s ease-out;
             z-index: 2;
         }
-
         .template-item .checkmark svg {
             width: 18px;
             height: 18px;
@@ -80,7 +161,6 @@
             stroke: white;
             stroke-width: 2;
         }
-        
         .template-item.selected {
             outline-color: var(--selection-outline-color);
         }
@@ -92,7 +172,6 @@
             transform: scale(1);
             background-color: var(--selection-checkmark-bg);
         }
-
         .template-item .name-overlay {
             position: absolute;
             bottom: 0;
@@ -102,7 +181,6 @@
             background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);
             pointer-events: none;
         }
-        
         .template-item .name-overlay p {
             margin: 0;
             color: white;
@@ -120,8 +198,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 20px 40px;
-            height: 90px;
+            padding-top: 20px;
         }
         .page-controls button {
             font-family: inherit;
@@ -145,35 +222,121 @@
             border-color: var(--button-border-color);
             background-color: transparent;
         }
-        #message { position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%); background-color: rgba(0, 0, 0, 0.5); padding: 10px 20px; border-radius: 8px; font-size: 1rem; }
+        #message {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+            z-index: 10;
+        }
         .message:empty { display: none; }
     </style>
 </head>
 <body>
     
-    <div class="main-content">
-        <h1>Pilih Template Favorit Anda</h1>
-        <p class="subtitle">Anda bisa memilih lebih dari satu!</p>
-        <div id="templatesGrid" class="templates-grid">
-            <p>Memuat template...</p>
-        </div>
-    </div>
-    
-    <div class="page-controls">
-        <button id="backButton">Kembali</button>
-        <button id="continueToResultButton" disabled>Lanjutkan</button>
+    <div class="page-container">
+        <header class="header-section">
+            <h1>Pilih Template Favorit Anda</h1>
+            <p class="subtitle">Klik foto di kiri, lalu pilih template di kanan.</p>
+        </header>
+        
+        <main class="content-body">
+            <aside id="capturedPhotosPanel" class="captured-photos-panel">
+                <!-- Captured photos will be injected here by JavaScript -->
+            </aside>
+            <div class="template-selection-panel">
+                <div id="templatesGrid" class="templates-grid">
+                    <p>Memuat template...</p>
+                </div>
+            </div>
+        </main>
+        
+        <footer class="page-controls">
+            <button id="backButton">Kembali</button>
+            <button id="continueToResultButton" disabled>Lanjutkan</button>
+        </footer>
     </div>
 
     <p id="message" class="message"></p>
 
     <script>
         const templatesGrid = document.getElementById('templatesGrid');
+        const capturedPhotosPanel = document.getElementById('capturedPhotosPanel');
         const continueButton = document.getElementById('continueToResultButton');
         const backButton = document.getElementById('backButton');
         const messageEl = document.getElementById('message');
         const API_BASE_URL = 'http://127.0.0.1:8000';
         
-        let selectedTemplates = new Set();
+        let photoTemplateMap = new Map();
+        let capturedImages = [];
+        let activePhotoIndex = 0;
+
+        function setActivePhoto(index) {
+            activePhotoIndex = index;
+            // Update UI for photo panel
+            document.querySelectorAll('.captured-photo-item').forEach((item, i) => {
+                item.classList.toggle('active', i === index);
+            });
+            // Update UI for template grid
+            updateTemplateGridSelection();
+        }
+        
+        function updateTemplateGridSelection() {
+            const selectedTemplateName = photoTemplateMap.get(activePhotoIndex);
+            document.querySelectorAll('.template-item').forEach(item => {
+                item.classList.toggle('selected', item.dataset.templateName === selectedTemplateName);
+            });
+        }
+
+        function checkCompletion() {
+            const allPhotosHaveTemplates = capturedImages.every((_, index) => photoTemplateMap.has(index));
+            continueButton.disabled = !allPhotosHaveTemplates;
+        }
+
+        function loadCapturedPhotos() {
+            const capturedImagesStr = sessionStorage.getItem('capturedImages');
+            if (!capturedImagesStr) {
+                capturedPhotosPanel.innerHTML = '<p>Tidak ada foto yang ditemukan.</p>';
+                return;
+            }
+            
+            try {
+                capturedImages = JSON.parse(capturedImagesStr);
+                capturedPhotosPanel.innerHTML = ''; 
+                
+                if (Array.isArray(capturedImages) && capturedImages.length > 0) {
+                    capturedImages.forEach((imgDataUrl, index) => {
+                        const item = document.createElement('div');
+                        item.classList.add('captured-photo-item');
+                        item.dataset.index = index;
+                        
+                        const img = document.createElement('img');
+                        img.src = imgDataUrl;
+                        img.alt = `Captured photo ${index + 1}`;
+                        
+                        const assignedName = document.createElement('div');
+                        assignedName.classList.add('assigned-template-name');
+                        assignedName.style.display = 'none';
+
+                        item.appendChild(img);
+                        item.appendChild(assignedName);
+                        
+                        item.addEventListener('click', () => setActivePhoto(index));
+                        capturedPhotosPanel.appendChild(item);
+                    });
+                    setActivePhoto(0); // Set the first photo as active by default
+                } else {
+                     capturedPhotosPanel.innerHTML = '<p>Tidak ada foto yang ditemukan.</p>';
+                }
+            } catch (e) {
+                console.error("Error parsing captured images from sessionStorage", e);
+                capturedPhotosPanel.innerHTML = '<p>Gagal memuat foto.</p>';
+            }
+        }
 
         async function loadTemplates() {
             try {
@@ -222,14 +385,23 @@
             const clickedItem = event.target.closest('.template-item');
             if (clickedItem) {
                 const templateName = clickedItem.dataset.templateName;
-                clickedItem.classList.toggle('selected');
-                if (selectedTemplates.has(templateName)) {
-                    selectedTemplates.delete(templateName);
-                } else {
-                    selectedTemplates.add(templateName);
+                
+                // Assign template to the active photo
+                photoTemplateMap.set(activePhotoIndex, templateName);
+                
+                // Update the UI for the active photo
+                const activePhotoItem = document.querySelector(`.captured-photo-item[data-index='${activePhotoIndex}']`);
+                if (activePhotoItem) {
+                    const nameDisplay = activePhotoItem.querySelector('.assigned-template-name');
+                    nameDisplay.textContent = templateName.replace(/_/g, ' ');
+                    nameDisplay.style.display = 'block';
                 }
-                continueButton.disabled = selectedTemplates.size === 0;
-                messageEl.textContent = '';
+                
+                // Update the template grid selection display
+                updateTemplateGridSelection();
+                
+                // Check if all photos have templates
+                checkCompletion();
             }
         });
         
@@ -238,15 +410,27 @@
         });
 
         continueButton.addEventListener('click', () => {
-            if (selectedTemplates.size > 0) {
-                const selectedArray = Array.from(selectedTemplates);
-                sessionStorage.setItem('selectedTemplateNames', JSON.stringify(selectedArray));
+            if (!continueButton.disabled) {
+                const selections = Array.from(photoTemplateMap.entries()).map(([photoIndex, templateName]) => {
+                    return {
+                        imageDataUrl: capturedImages[photoIndex],
+                        templateName: templateName
+                    };
+                });
+                
+                sessionStorage.setItem('photoTemplateSelections', JSON.stringify(selections));
+                // Clear old items to avoid confusion on the next page
+                sessionStorage.removeItem('capturedImage');
+                sessionStorage.removeItem('selectedTemplateNames');
+                
                 window.location.href = 'user_result.html';
             } else {
-                messageEl.textContent = "Silakan pilih minimal satu template.";
+                messageEl.textContent = "Silakan pilih template untuk setiap foto.";
             }
         });
 
+        // Initial load
+        loadCapturedPhotos();
         loadTemplates();
     </script>
 </body>

@@ -43,12 +43,60 @@
         }
         .result-card img.result-image { width: 100%; height: 100%; object-fit: cover; }
         .result-card .qr-container {
-            flex-shrink: 0; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; padding: 15px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
             background-color: #f0f2f5;
+            min-height: 80px;
         }
-        .result-card .qr-container img { width: 120px; height: 120px; border-radius: 8px; }
-        .result-card .qr-container p { color: #555; font-size: 0.8rem; font-weight: 600; margin: 8px 0 0 0; }
+        .qr-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1; /* Allow this element to grow and shrink */
+            min-width: 0; /* Prevent content from pushing the container */
+        }
+        .result-card .qr-container img {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+        }
+        .result-card .qr-container p {
+            color: #555;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin: 0;
+        }
+        .regenerate-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 5;
+            font-family: inherit;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: white;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 20px;
+            cursor: pointer;
+            padding: 8px 16px;
+            transition: background-color 0.2s, color 0.2s, opacity 0.2s;
+            flex-shrink: 0;
+        }
+        .regenerate-button:hover:not(:disabled) {
+            background-color: var(--bg-color);
+            border-color: var(--bg-color);
+            color: white;
+        }
+        .regenerate-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background-color: #888;
+            border-color: #888;
+        }
 
         
         .page-footer {
@@ -202,8 +250,92 @@
             }
             return new Blob([u8arr], {type:mime});
         }
+        
+        async function handleRegenerate(event) {
+            const button = event.currentTarget;
+            const cardElement = button.closest('.result-card');
+            const imageContainer = cardElement.querySelector('.image-container');
+            const qrContainer = cardElement.querySelector('.qr-container');
+            const qrInfo = qrContainer.querySelector('.qr-info');
 
-        async function processSingleImage(templateName, capturedImageDataUrl, cardElement, ticketCode) {
+            const templateName = button.dataset.templateName;
+            const originalImageDataUrl = button.dataset.originalImageDataUrl;
+            const ticketCode = sessionStorage.getItem('ticketCode');
+
+            button.disabled = true;
+            button.textContent = '...';
+            imageContainer.innerHTML = `
+                <div class="loading-spinner"></div>
+                <p class="loading-text" style="position: absolute; bottom: 20px; color: #555; font-weight: 600;">Regenerating...</p>
+            `;
+            
+            const imageBlob = dataURLtoBlob(originalImageDataUrl);
+            const formData = new FormData();
+            formData.append('file', imageBlob, 'capture.png');
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/regenerate-image/${templateName}`, {
+                    method: 'POST',
+                    headers: { 'X-Ticket-Token': ticketCode },
+                    body: formData
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || 'Gagal meregenerasi gambar.');
+
+                const resultImgSrc = `data:image/png;base64,${data.generated_image_base64}`;
+                const qrImgSrc = (data.google_drive_upload && data.google_drive_upload.qr_code_base64) 
+                    ? `data:image/png;base64,${data.google_drive_upload.qr_code_base64}` 
+                    : null;
+
+                const newImageContainer = imageContainer.cloneNode(false);
+                const resultImg = document.createElement('img');
+                resultImg.src = resultImgSrc;
+                resultImg.alt = `Hasil AI untuk template ${templateName}`;
+                resultImg.classList.add('result-image');
+                newImageContainer.appendChild(resultImg);
+                
+                // Re-add the regenerate button to the new container
+                const newRegenerateButton = button.cloneNode(true);
+                newRegenerateButton.textContent = 'Regenerate';
+                newRegenerateButton.disabled = false;
+                newRegenerateButton.addEventListener('click', handleRegenerate);
+                newImageContainer.appendChild(newRegenerateButton);
+
+                imageContainer.parentNode.replaceChild(newImageContainer, imageContainer);
+                
+                newImageContainer.addEventListener('click', (event) => {
+                    if (event.target.classList.contains('regenerate-button')) {
+                        return;
+                    }
+                    openLightbox(resultImgSrc, qrImgSrc);
+                });
+                
+                if (qrInfo) {
+                    if (qrImgSrc) {
+                        qrInfo.innerHTML = '';
+                        const qrImg = document.createElement('img');
+                        qrImg.src = qrImgSrc;
+                        qrImg.alt = 'Kode QR untuk mengunduh';
+                        const qrText = document.createElement('p');
+                        qrText.textContent = 'Scan to Download';
+                        qrInfo.appendChild(qrImg);
+                        qrInfo.appendChild(qrText);
+                    } else {
+                        qrInfo.innerHTML = '<p>QR Code tidak tersedia.</p>';
+                    }
+                }
+
+            } catch (error) {
+                console.error(`Error regenerating image for ${templateName}:`, error);
+                showStatus(error.message, true);
+                imageContainer.innerHTML = `<p style="padding: 1rem; color: #D73737; font-weight: 600;">Regeneration Failed</p>`;
+            } finally {
+                // The original button is gone, so no need to re-enable it.
+            }
+        }
+
+        async function processSelection(selection, cardElement, ticketCode) {
+            const { imageDataUrl, templateName } = selection;
             const imageContainer = cardElement.querySelector('.image-container');
             const qrContainer = cardElement.querySelector('.qr-container');
             
@@ -214,7 +346,7 @@
             `;
             qrContainer.innerHTML = '<p>Generating QR Code...</p>';
 
-            const imageBlob = dataURLtoBlob(capturedImageDataUrl);
+            const imageBlob = dataURLtoBlob(imageDataUrl);
             const formData = new FormData();
             formData.append('file', imageBlob, 'capture.png');
             formData.append('ticket_token', ticketCode);
@@ -240,22 +372,40 @@
                 resultImg.classList.add('result-image');
                 imageContainer.appendChild(resultImg);
                 
-                imageContainer.addEventListener('click', () => {
+                imageContainer.addEventListener('click', (event) => {
+                    if (event.target.classList.contains('regenerate-button')) {
+                        return;
+                    }
                     openLightbox(resultImgSrc, qrImgSrc);
                 });
                 
+                qrContainer.innerHTML = '';
+
+                const qrInfo = document.createElement('div');
+                qrInfo.className = 'qr-info';
+
                 if (qrImgSrc) {
-                    qrContainer.innerHTML = '';
                     const qrImg = document.createElement('img');
                     qrImg.src = qrImgSrc;
                     qrImg.alt = 'Kode QR untuk mengunduh';
                     const qrText = document.createElement('p');
                     qrText.textContent = 'Scan to Download';
-                    qrContainer.appendChild(qrImg);
-                    qrContainer.appendChild(qrText);
+                    qrInfo.appendChild(qrImg);
+                    qrInfo.appendChild(qrText);
                 } else {
-                    qrContainer.innerHTML = '<p>QR Code tidak tersedia.</p>';
+                    qrInfo.innerHTML = '<p>QR Code tidak tersedia.</p>';
                 }
+
+                const regenerateButton = document.createElement('button');
+                regenerateButton.className = 'regenerate-button';
+                regenerateButton.textContent = 'Regenerate';
+                regenerateButton.dataset.templateName = templateName;
+                regenerateButton.dataset.originalImageDataUrl = imageDataUrl; 
+
+                regenerateButton.addEventListener('click', handleRegenerate);
+
+                imageContainer.appendChild(regenerateButton);
+                qrContainer.appendChild(qrInfo);
 
             } catch (error) {
                 console.error(`Error generating image for ${templateName}:`, error);
@@ -266,21 +416,20 @@
 
         async function generateImages() {
             finishedButton.disabled = true;
-            const capturedImageDataUrl = sessionStorage.getItem('capturedImage');
-            const selectedTemplatesStr = sessionStorage.getItem('selectedTemplateNames');
+            const selectionsStr = sessionStorage.getItem('photoTemplateSelections');
             const ticketCode = sessionStorage.getItem('ticketCode');
             
-            if (!capturedImageDataUrl || !selectedTemplatesStr || !ticketCode) {
-                showStatus("Error: Sesi tidak valid (gambar, template, atau tiket tidak ditemukan).", true);
+            if (!selectionsStr || !ticketCode) {
+                showStatus("Error: Sesi tidak valid (pilihan template atau tiket tidak ditemukan).", true);
                 setTimeout(() => window.location.href = 'user_validate_ticket.html', 3000);
                 return;
             }
 
             try {
-                const selectedTemplates = JSON.parse(selectedTemplatesStr);
+                const selections = JSON.parse(selectionsStr);
                 resultGrid.innerHTML = '';
 
-                const cardElements = selectedTemplates.map(templateName => {
+                const cardElements = selections.map(() => {
                     const card = document.createElement('div');
                     card.classList.add('result-card');
                     card.innerHTML = `
@@ -292,12 +441,12 @@
                 });
 
                 let index = 0;
-                for (const templateName of selectedTemplates) {
-                    showStatus(`Memproses gambar ${index + 1} dari ${selectedTemplates.length}...`);
+                for (const selection of selections) {
+                    showStatus(`Memproses gambar ${index + 1} dari ${selections.length}...`);
                     const currentCard = cardElements[index];
-                    await processSingleImage(templateName, capturedImageDataUrl, currentCard, ticketCode);
+                    await processSelection(selection, currentCard, ticketCode);
                     
-                    if (index < selectedTemplates.length - 1) {
+                    if (index < selections.length - 1) {
                         await delay(5000);
                     }
                     index++;
@@ -306,7 +455,7 @@
                 showStatus('Semua gambar berhasil diproses!', false);
 
             } catch (e) {
-                showStatus("Error: Data template tidak valid.", true);
+                showStatus("Error: Data pilihan template tidak valid.", true);
                 setTimeout(() => window.location.href = 'user_templates.html', 3000);
             } finally {
                 finishedButton.disabled = false;
@@ -326,8 +475,8 @@
         }
 
         finishedButton.addEventListener('click', () => {
-            sessionStorage.removeItem('capturedImage');
-            sessionStorage.removeItem('selectedTemplateNames');
+            sessionStorage.removeItem('capturedImages');
+            sessionStorage.removeItem('photoTemplateSelections');
             sessionStorage.removeItem('ticketCode');
             window.location.href = 'index.html';
         });
