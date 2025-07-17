@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Templates - Admin Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sidebar-bg: #FFFFFF;
+            --main-bg: #F7F8FC;
+            --card-bg: #FFFFFF;
+            --primary-orange: #F58D3D;
+            --text-dark: #252733;
+            --text-gray: #9FA2B4;
+            --text-inactive: #4B5563;
+            --border-color: #DFE0EB;
+            --danger-color: #D73737;
+            --font-family: 'Mulish', sans-serif;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        body { margin: 0; font-family: var(--font-family); background-color: var(--main-bg); color: var(--text-dark); font-size: 14px; }
+        .admin-layout { display: flex; min-height: 100vh; }
+        .sidebar { width: 255px; background-color: var(--sidebar-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; flex-shrink: 0; }
+        .main-content { flex-grow: 1; padding: 30px; overflow-x: hidden; }
+        .content-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .content-header h1 { font-size: 1.5rem; font-weight: 700; margin: 0; }
+        .add-new-button { background-color: var(--primary-orange); color: white; padding: 10px 24px; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 700; cursor: pointer; text-decoration: none; }
+        .metric-card { background-color: var(--card-bg); border-radius: 8px; border: 1px solid var(--border-color); padding: 24px 30px; margin-bottom: 30px; }
+        .metric-card h2 { margin: 0; font-size: 1.2rem; }
+        .metric-card p { margin: 4px 0 0; font-size: 2rem; font-weight: bold; color: var(--primary-orange); }
+        .content-card { background-color: var(--card-bg); border-radius: 8px; border: 1px solid var(--border-color); }
+        .card-toolbar { display: flex; justify-content: flex-end; align-items: center; padding: 20px 30px; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; gap: 20px; }
+        .search-wrapper { position: relative; width: 300px; }
+        .search-wrapper svg { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; fill: var(--text-gray); }
+        #searchInput { width: 100%; padding: 10px 15px 10px 40px; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; font-size: 14px; }
+        #bulkDeleteBtn { background: none; border: 1px solid var(--border-color); color: var(--text-gray); border-radius: 8px; padding: 8px; cursor: pointer; line-height: 0; transition: all 0.2s; }
+        #bulkDeleteBtn:not(:disabled):hover { border-color: var(--danger-color); color: var(--danger-color); }
+        #bulkDeleteBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .table-container { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 20px 30px; text-align: left; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+        th { color: var(--text-gray); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.2px; white-space: nowrap; }
+        th.sortable { cursor: pointer; }
+        th.sortable .sort-icons { display: inline-flex; flex-direction: column; margin-left: 8px; opacity: 0.5; }
+        th.sortable.asc .sort-icons, th.sortable.desc .sort-icons { opacity: 1; }
+        th.sortable .sort-icons svg { width: 8px; height: 8px; fill: var(--text-dark); }
+        th.sortable.asc .icon-asc { color: var(--primary-orange); }
+        th.sortable.desc .icon-desc { color: var(--primary-orange); }
+        table tr:last-child td { border-bottom: none; }
+        table tr:hover { background-color: var(--main-bg); }
+        td .template-info { display: flex; align-items: center; gap: 24px; font-weight: 600; }
+        td .template-info img { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; }
+        .action-link { background: none; border: none; padding: 4px; font-family: inherit; font-size: 14px; color: var(--text-gray); cursor: pointer; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+        .action-link.edit { color: var(--primary-orange); margin-right: 16px; }
+        .action-link.delete { color: var(--danger-color); }
+        .pagination-controls { display: flex; justify-content: space-between; align-items: center; padding: 24px 30px; color: var(--text-gray); flex-wrap: wrap; gap: 20px; visibility: hidden; }
+        .pagination-info { flex-shrink: 0; color: var(--text-dark); font-weight: 600; }
+        .items-per-page-selector { display: flex; align-items: center; gap: 8px; margin: 0 auto; }
+        #itemsPerPageSelect { font-family: inherit; font-weight: 600; color: var(--text-dark); border: 1px solid var(--border-color); border-radius: 6px; padding: 5px; }
+        .pagination-nav { display: flex; align-items: center; gap: 4px; }
+        .pagination-nav button { background: none; border: 1px solid transparent; color: var(--text-gray); font-weight: 600; padding: 7px 12px; margin: 0; cursor: pointer; border-radius: 6px; transition: all 0.2s ease-in-out; min-width: 36px; text-align: center; }
+        .pagination-nav button:hover:not(.active) { border-color: var(--border-color); background-color: var(--main-bg); }
+        .pagination-nav button.active { border: 2px solid var(--primary-orange); color: var(--primary-orange); font-weight: 700; padding: 6px 11px; }
+        .pagination-nav button:first-child, .pagination-nav button:last-child { font-size: 1.2rem; }
+        .loader { text-align: center; padding: 50px; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(37, 39, 51, 0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0s 0.3s; }
+        .modal-overlay.visible { opacity: 1; visibility: visible; transition: opacity 0.3s ease; }
+        .modal-content { background-color: var(--card-bg); padding: 30px; border-radius: 8px; width: 90%; max-width: 400px; text-align: center; transform: scale(0.95); transition: transform 0.3s ease; }
+        .modal-overlay.visible .modal-content { transform: scale(1); }
+        .modal-content h2 { margin: 0 0 10px 0; font-size: 1.2rem; color: var(--text-dark); }
+        .modal-content p { margin: 0 0 25px 0; color: var(--text-gray); line-height: 1.5; }
+        .modal-content hr { border: none; border-top: 1px solid var(--border-color); margin: 0 -30px 25px -30px; }
+        .modal-actions { display: flex; gap: 15px; }
+        .modal-button { flex-grow: 1; padding: 10px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 14px; }
+        .modal-button.cancel { background-color: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-gray); }
+        .modal-button.delete { background-color: var(--danger-color); border: 1px solid var(--danger-color); color: white; }
+    </style>
+</head>
+<body>
+
+    <div class="admin-layout">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+            <div class="content-header">
+                <h1>Manage Templates</h1>
+                <a href="admin_add_template.html" class="add-new-button">Add New Template</a>
+            </div>
+            
+            <div class="metric-card">
+                <h2>Total Templates</h2>
+                <p id="totalTemplatesCount">0</p>
+            </div>
+
+            <div class="content-card">
+                <div class="card-toolbar">
+                    <button id="bulkDeleteBtn" disabled>
+                         <svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path></svg>
+                    </button>
+                    <div class="search-wrapper">
+                        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                        <input type="text" id="searchInput" placeholder="Search by name">
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="selectAllCheckbox"></th>
+                                <th>Image</th>
+                                <th id="sortByName" class="sortable">
+                                    <span>Name</span>
+                                    <span class="sort-icons">
+                                        <svg class="icon-asc" viewBox="0 0 24 24"><path fill="currentColor" d="M7 14l5-5 5 5z"></path></svg>
+                                        <svg class="icon-desc" viewBox="0 0 24 24"><path fill="currentColor" d="M7 10l5 5 5-5z"></path></svg>
+                                    </span>
+                                </th>
+                                <th style="text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="templatesTableBody">
+                            <tr><td colspan="4" class="loader">Loading templates...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="pagination-controls">
+                    <div id="paginationInfo"></div>
+                    <div class="items-per-page-selector">
+                        <select id="itemsPerPageSelect">
+                            <option value="5" selected>5</option>
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                        </select>
+                        <span>per page</span>
+                    </div>
+                    <div id="paginationNav" class="pagination-nav"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="deleteConfirmationModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 id="deleteModalTitle">Delete Template</h2>
+            <p id="deleteModalText">Are you sure you want to delete this template?</p>
+            <hr>
+            <div class="modal-actions">
+                <button id="cancelDeleteBtn" class="modal-button cancel">Cancel</button>
+                <button id="confirmDeleteBtn" class="modal-button delete">Delete</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/admin_sidebar.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            createSidebar('templates');
+        });
+
+        let allTemplates = [];
+        let searchTerm = '';
+        let currentPage = 1;
+        let itemsPerPage = 5;
+        let sortState = { key: 'name', order: 'asc' };
+        let selectedTemplates = new Set();
+        const API_BASE_URL = 'http://127.0.0.1:8000';
+        const token = localStorage.getItem('adminToken');
+
+        const tableBody = document.getElementById('templatesTableBody');
+        const totalTemplatesCountEl = document.getElementById('totalTemplatesCount');
+        const searchInput = document.getElementById('searchInput');
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+        const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+        const sortByNameHeader = document.getElementById('sortByName');
+        const itemsPerPageSelect = document.getElementById('itemsPerPageSelect');
+
+        function displayData() {
+            const filtered = allTemplates.filter(template => template.name.toLowerCase().includes(searchTerm.toLowerCase()));
+            filtered.sort((a, b) => {
+                const nameA = a.name.toLowerCase();
+                const nameB = b.name.toLowerCase();
+                if (nameA < nameB) return sortState.order === 'asc' ? -1 : 1;
+                if (nameA > nameB) return sortState.order === 'asc' ? 1 : -1;
+                return 0;
+            });
+            updateSortIndicator();
+            const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+            renderTable(paginated);
+            renderPagination(filtered.length);
+            updateBulkDeleteButtonState();
+        }
+
+        function renderTable(templatesToRender) {
+             tableBody.innerHTML = '';
+            if (templatesToRender.length === 0) {
+                const message = searchTerm ? 'No matching templates found.' : 'No templates have been added yet.';
+                tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 40px;">${message}</td></tr>`;
+                return;
+            }
+
+            templatesToRender.forEach(template => {
+                const row = document.createElement('tr');
+                const isSelected = selectedTemplates.has(template.name);
+                const formattedName = template.name.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                row.innerHTML = `
+                    <td><input type="checkbox" data-name="${template.name}" ${isSelected ? 'checked' : ''}></td>
+                    <td><div class="template-info"><img src="${API_BASE_URL}/${template.url}" alt="${formattedName}"></div></td>
+                    <td><div class="template-info">${formattedName}</div></td>
+                    <td style="text-align: right;">
+                        <a href="admin_edit_template.html?name=${template.name}" class="action-link edit"><svg width="14" height="14" viewBox="0 0 24 24"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"></path></svg> Edit</a>
+                        <button class="action-link delete" data-name="${template.name}" data-formatted-name="${formattedName}"><svg width="14" height="14" viewBox="0 0 24 24"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path></svg> Delete</button>
+                    </td>
+                `;
+                row.querySelector('.delete').addEventListener('click', handleSingleDelete);
+                row.querySelector('input[type="checkbox"]').addEventListener('change', (e) => handleCheckboxChange(e.target.dataset.name, e.target.checked));
+                tableBody.appendChild(row);
+            });
+            updateSelectAllCheckboxState();
+        }
+
+        function renderPagination(totalItems) {
+            const paginationNav = document.getElementById('paginationNav');
+            const paginationInfo = document.getElementById('paginationInfo');
+            const paginationControls = document.querySelector('.pagination-controls');
+
+            paginationNav.innerHTML = ''; 
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            
+            const startItem = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+            const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+            paginationInfo.textContent = `Showing ${startItem} to ${endItem} of ${totalItems} results`;
+            
+            if (totalPages <= 1) {
+                paginationControls.style.visibility = 'hidden';
+                return;
+            }
+            paginationControls.style.visibility = 'visible';
+
+            if (currentPage > 1) {
+                const prevButton = document.createElement('button');
+                prevButton.innerHTML = '&lsaquo;';
+                prevButton.setAttribute('aria-label', 'Previous page');
+                prevButton.addEventListener('click', () => {
+                    if (currentPage > 1) {
+                        currentPage--;
+                        displayData();
+                    }
+                });
+                paginationNav.appendChild(prevButton);
+            }
+            
+            for (let i = 1; i <= totalPages; i++) {
+                const pageButton = document.createElement('button');
+                pageButton.textContent = i;
+                if (i === currentPage) {
+                    pageButton.classList.add('active');
+                }
+                pageButton.addEventListener('click', () => {
+                    currentPage = i;
+                    displayData();
+                });
+                paginationNav.appendChild(pageButton);
+            }
+            
+            if (currentPage < totalPages) {
+                const nextButton = document.createElement('button');
+                nextButton.innerHTML = '&rsaquo;';
+                nextButton.setAttribute('aria-label', 'Next page');
+                nextButton.addEventListener('click', () => {
+                    if (currentPage < totalPages) {
+                        currentPage++;
+                        displayData();
+                    }
+                });
+                paginationNav.appendChild(nextButton);
+            }
+        }
+
+        async function fetchTemplates() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/get-templates`, { headers: { 'Authorization': `Bearer ${token}` }});
+                if (response.status === 401) { handleUnauthorized(); return; }
+                if (!response.ok) throw new Error('Failed to fetch templates.');
+                allTemplates = await response.json();
+                totalTemplatesCountEl.textContent = allTemplates.length;
+                itemsPerPageSelect.value = itemsPerPage;
+                displayData();
+            } catch (error) {
+                console.error("Error fetching templates:", error);
+                tableBody.innerHTML = `<tr><td colspan="4" class="loader">Error loading data.</td></tr>`;
+            }
+        }
+
+        function showConfirmationModal(names, formattedNames) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('deleteConfirmationModal');
+                const title = document.getElementById('deleteModalTitle');
+                const text = document.getElementById('deleteModalText');
+                const confirmBtn = document.getElementById('confirmDeleteBtn');
+                const cancelBtn = document.getElementById('cancelDeleteBtn');
+                
+                const isSingle = names.length === 1;
+                title.textContent = isSingle ? `Delete Template` : `Delete ${names.length} Templates`;
+                text.textContent = isSingle 
+                    ? `Are you sure you want to delete "${formattedNames[0]}"? This action cannot be undone.`
+                    : `Are you sure you want to delete ${names.length} selected templates? This action cannot be undone.`;
+
+                modal.classList.add('visible');
+                
+                const onConfirm = () => { cleanup(); resolve(true); };
+                const onCancel = () => { cleanup(); resolve(false); };
+                
+                const cleanup = () => {
+                    modal.classList.remove('visible');
+                    confirmBtn.removeEventListener('click', onConfirm);
+                    cancelBtn.removeEventListener('click', onCancel);
+                };
+
+                confirmBtn.addEventListener('click', onConfirm, { once: true });
+                cancelBtn.addEventListener('click', onCancel, { once: true });
+            });
+        }
+
+        async function handleSingleDelete(event) {
+            const button = event.currentTarget;
+            const templateName = button.dataset.name;
+            const formattedName = button.dataset.formattedName;
+            const confirmed = await showConfirmationModal([templateName], [formattedName]);
+            if (!confirmed) return;
+            await deleteTemplatesAPI([templateName]);
+        }
+
+        async function handleBulkDelete() {
+            const namesToDelete = Array.from(selectedTemplates);
+            if(namesToDelete.length === 0) return;
+            const confirmed = await showConfirmationModal(namesToDelete, []);
+            if(!confirmed) return;
+            await deleteTemplatesAPI(namesToDelete);
+        }
+
+        async function deleteTemplatesAPI(names) {
+            const deletePromises = names.map(name => fetch(`${API_BASE_URL}/delete-template/${name}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }}));
+            try {
+                const responses = await Promise.all(deletePromises);
+                const failed = responses.find(res => !res.ok);
+                if (failed) {
+                    const errorData = await failed.json().catch(() => ({ detail: 'An unknown error occurred.'}));
+                    throw new Error(errorData.detail || 'One or more templates failed to delete.');
+                }
+                alert(`${names.length} template(s) deleted successfully.`);
+                selectedTemplates.clear();
+                currentPage = 1;
+                fetchTemplates();
+            } catch (error) {
+                console.error('Error deleting templates:', error);
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        function handleUnauthorized() {
+            localStorage.removeItem('adminToken');
+            window.location.href = 'admin_login.html';
+        }
+
+        function handleCheckboxChange(name, isChecked) {
+            if(isChecked) { selectedTemplates.add(name); } 
+            else { selectedTemplates.delete(name); }
+            updateSelectAllCheckboxState();
+            updateBulkDeleteButtonState();
+        }
+
+        function updateSelectAllCheckboxState() {
+            const displayedCheckboxes = tableBody.querySelectorAll('input[type="checkbox"]');
+            if (displayedCheckboxes.length === 0) {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = false;
+                return;
+            }
+            const checkedCount = Array.from(displayedCheckboxes).filter(cb => cb.checked).length;
+            if (checkedCount === 0) {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = false;
+            } else if (checkedCount === displayedCheckboxes.length) {
+                selectAllCheckbox.checked = true;
+                selectAllCheckbox.indeterminate = false;
+            } else {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = true;
+            }
+        }
+
+        function updateBulkDeleteButtonState() {
+            bulkDeleteBtn.disabled = selectedTemplates.size === 0;
+        }
+        
+        function updateSortIndicator() {
+            sortByNameHeader.classList.remove('asc', 'desc');
+            if(sortState.order === 'asc') sortByNameHeader.classList.add('asc');
+            else if (sortState.order === 'desc') sortByNameHeader.classList.add('desc');
+        }
+
+        let searchTimeout;
+        searchInput.addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                searchTerm = searchInput.value;
+                currentPage = 1;
+                displayData();
+            }, 300);
+        });
+
+        itemsPerPageSelect.addEventListener('change', () => {
+            itemsPerPage = parseInt(itemsPerPageSelect.value, 10);
+            currentPage = 1;
+            displayData();
+        });
+
+        selectAllCheckbox.addEventListener('change', (e) => {
+            const isChecked = e.target.checked;
+            tableBody.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.checked = isChecked;
+                handleCheckboxChange(checkbox.dataset.name, isChecked);
+            });
+        });
+
+        sortByNameHeader.addEventListener('click', () => {
+            sortState.order = sortState.order === 'asc' ? 'desc' : 'asc';
+            displayData();
+        });
+        
+        bulkDeleteBtn.addEventListener('click', handleBulkDelete);
+
+        if (!token) {
+            handleUnauthorized();
+        } else {
+            document.addEventListener('DOMContentLoaded', fetchTemplates);
+        }
+    </script>
+</body>
+</html>

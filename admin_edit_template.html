@@ -76,7 +76,7 @@
                     </div>
 
                     <div class="form-actions">
-                        <a href="admin_dashboard.html" class="form-button secondary">Cancel</a>
+                        <a href="admin_manage_template.html" class="form-button secondary">Cancel</a>
                         <button type="submit" id="submitButton" class="form-button primary">Save Changes</button>
                     </div>
                 </form>
@@ -124,7 +124,7 @@
 
             if (!templateName) {
                 alert('Template name not specified.');
-                window.location.href = 'admin_dashboard.html';
+                window.location.href = 'admin_manage_template.html';
                 return;
             }
 
@@ -185,7 +185,7 @@
 
                 if (response.ok) {
                     displayMessage('Template updated successfully!', 'success');
-                    setTimeout(() => window.location.href = 'admin_dashboard.html', 1500);
+                    setTimeout(() => window.location.href = 'admin_manage_template.html', 1500);
                 } else {
                     throw new Error(data.detail || 'Failed to update template.');
                 }

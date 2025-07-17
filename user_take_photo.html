@@ -4,41 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Kdam+Thmor+Pro&display=swap" rel="stylesheet">
-    <title>Ambil Foto - AI Photobooth</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kdam+Thmor+Pro&display=swap" rel="stylesheet">
+    <title>Sesi Foto - AI Photobooth</title>
     <style>
-        
         :root {
             --bg-color: #D9773B; 
             --frame-bg-color: #FEFBF5; 
             --text-color: #FFFFFF;
-            --icon-color: #FFFFFF;
-            --timer-active-color: #FFFFFF;
-            --timer-inactive-color: rgba(255, 255, 255, 0.6);
-            --font-family: 'Kdam Thmor Pro', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            --font-family: 'Kdam Thmor Pro', 'Segoe UI', sans-serif;
         }
-
-        *, *::before, *::after {
-            box-sizing: border-box;
-        }
-
+        *, *::before, *::after { box-sizing: border-box; }
         html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
+            height: 100%; margin: 0; padding: 0;
             font-family: var(--font-family);
             background-color: var(--bg-color);
             color: var(--text-color);
-        }
-
-        
-        body {
             display: flex;
             justify-content: center;
             align-items: center;
         }
-
         .photobooth-app {
             display: flex;
             flex-direction: column;
@@ -47,8 +32,6 @@
             max-width: 1000px;
             max-height: 750px;
         }
-
-        
         .photobooth-viewport {
             flex-grow: 1;
             background-color: var(--frame-bg-color);
@@ -59,32 +42,55 @@
             justify-content: center;
             align-items: center;
         }
-
-        video, canvas, #photoPreview {
+        video, canvas {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
-
-        canvas {
-            display: none;
-        }
-
-        
-        #countdownDisplay, #errorMessage {
+        canvas { display: none; }
+        .photobooth-overlay {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             text-align: center;
             color: var(--bg-color);
+            background-color: rgba(254, 251, 245, 0.8);
         }
-
-        #countdownDisplay {
-            font-size: clamp(5rem, 15vw, 10rem);
+        .photobooth-overlay.hidden { display: none; }
+        
+        /* Tampilan Awal */
+        #start-view h2 { font-size: 2rem; }
+        #start-view p { font-size: 1.2rem; }
+        #startSessionBtn {
+            font-family: inherit;
+            font-size: 1.5rem;
             font-weight: bold;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            color: white;
+            background-color: var(--bg-color);
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+            padding: 15px 50px;
+            margin-top: 20px;
+            transition: transform 0.2s;
         }
+        #startSessionBtn:hover { transform: scale(1.05); }
+
+        /* Tampilan Sesi Foto */
+        #session-view h2 { font-size: 5rem; font-weight: bold; text-shadow: 0 0 10px rgba(255, 255, 255, 0.5); }
+        #session-view p { font-size: 1.5rem; }
+        #flash-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: white;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+        #flash-overlay.flash { opacity: 1; transition: opacity 0.05s ease; }
 
         #errorMessage {
             font-size: 1.2rem;
@@ -94,327 +100,168 @@
             display: none; 
             max-width: 80%;
         }
-
-       
-        .photobooth-controls {
-            flex-shrink: 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px;
-            height: 80px;
-        }
-        
-        .capture-controls, .preview-controls {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .capture-controls > * { flex: 1; }
-        .capture-controls .shutter-container { display: flex; justify-content: center; }
-        .capture-controls .timer-options { text-align: right; }
-
-        .control-button {
-            background: none;
-            border: none;
-            padding: 0;
-            cursor: pointer;
-            color: var(--icon-color);
-        }
-        
-        .control-button svg {
-            width: 50px;
-            height: 38px;
-            fill: currentColor;
-            transition: transform 0.2s ease;
-        }
-        
-        .control-button:hover:not(:disabled) svg {
-            transform: scale(1.1);
-        }
-
-        .control-button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .timer-options, .next-option { font-size: 1.5rem; font-weight: 600; }
-        .timer-options button { color: var(--timer-inactive-color); margin-left: 15px; font-size: inherit; font-weight: inherit; }
-        .timer-options button.selected { color: var(--timer-active-color); text-decoration: underline; }
-        #nextButton { font-size: inherit; font-weight: inherit; color: var(--text-color); }
-        .camera-selector { text-align: left; }
-        #cameraSelect {
-            background-color: transparent;
-            color: var(--text-color);
-            border: 2px solid var(--timer-inactive-color);
-            border-radius: 8px;
-            padding: 8px 12px;
-            font-size: 0.9rem;
-            max-width: 180px;
-        }
-        #cameraSelect:focus { outline: none; border-color: var(--text-color); }
-        #cameraSelect option { background-color: var(--bg-color); color: var(--text-color); }
-        .hidden { display: none !important; }
-
-        
-        .photobooth-app.state-capture .preview-controls,
-        .photobooth-app.state-capture #photoPreview {
-            display: none;
-        }
-        .photobooth-app.state-capture .capture-controls,
-        .photobooth-app.state-capture #videoElement {
-            display: flex;
-        }
-        
-        
-        .photobooth-app.state-preview .capture-controls,
-        .photobooth-app.state-preview #videoElement,
-        .photobooth-app.state-preview #countdownDisplay {
-            display: none;
-        }
-        .photobooth-app.state-preview .preview-controls,
-        .photobooth-app.state-preview #photoPreview {
-            display: flex;
-        }
     </style>
 </head>
 <body>
 
-    <main id="mainApp" class="photobooth-app state-capture">
-        
+    <main class="photobooth-app">
         <div class="photobooth-viewport">
             <video id="videoElement" autoplay playsinline muted></video>
             <canvas id="canvasElement"></canvas>
-            <img id="photoPreview" src="#" alt="Pratinjau Foto Anda">
-            <p id="countdownDisplay"></p>
+            <div id="flash-overlay"></div>
+
+            <!-- Tampilan Awal -->
+            <div id="start-view" class="photobooth-overlay">
+                <h2 id="packageName">Nama Paket</h2>
+                <p id="photoCountInfo">Anda akan mengambil X foto.</p>
+                <button id="startSessionBtn">Mulai Sesi Foto</button>
+            </div>
+
+            <!-- Tampilan Sesi Berlangsung -->
+            <div id="session-view" class="photobooth-overlay hidden">
+                <h2 id="countdownDisplay"></h2>
+                <p id="statusText"></p>
+            </div>
+
             <p id="errorMessage">Kamera tidak dapat diakses. <br>Mohon berikan izin pada browser Anda.</p>
         </div>
-        
-        <div class="photobooth-controls">
-            <div class="capture-controls">
-                <div class="camera-selector">
-                    <select id="cameraSelect" class="hidden" aria-label="Pilih Kamera"></select>
-                </div>
-
-                <div class="shutter-container">
-                    <button id="shutterButton" class="control-button" aria-label="Ambil Foto">
-                        <svg aria-hidden="true" focusable="false" width="101" height="97" viewBox="0 0 101 97" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M96.7916 76.7917C96.7916 78.9355 95.9048 80.9915 94.3264 82.5074C92.748 84.0234 90.6072 84.875 88.3749 84.875H12.6249C10.3927 84.875 8.25187 84.0234 6.67344 82.5074C5.09501 80.9915 4.20825 78.9355 4.20825 76.7917V32.3333C4.20825 30.1895 5.09501 28.1335 6.67344 26.6176C8.25187 25.1016 10.3927 24.25 12.6249 24.25H29.4583L37.8749 12.125H63.1249L71.5416 24.25H88.3749C90.6072 24.25 92.748 25.1016 94.3264 26.6176C95.9048 28.1335 96.7916 30.1895 96.7916 32.3333V76.7917Z" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M50.4999 68.7083C59.7967 68.7083 67.3332 61.4703 67.3332 52.5417C67.3332 43.6131 59.7967 36.375 50.4999 36.375C41.2031 36.375 33.6666 43.6131 33.6666 52.5417C33.6666 61.4703 41.2031 68.7083 50.4999 68.7083Z" stroke="grey" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </button>
-                </div>
-
-                <div class="timer-options">
-                    <button id="timer0s" class="control-button selected">0s</button>
-                    <button id="timer3s" class="control-button">3s</button>
-                    <button id="timer5s" class="control-button">5s</button>
-                </div>
-            </div>
-
-            <div class="preview-controls">
-                <button id="retakeButton" class="control-button" aria-label="Ulang Foto">
-                     <svg width="103" height="86" viewBox="0 0 103 86" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M28.9238 52.0921C29.7636 51.5244 30.9135 51.6732 31.5771 52.4681C32.285 53.316 32.1711 54.5776 31.3232 55.2855L18.3916 66.0833H72.958C77.0854 66.0833 80.9874 64.7112 83.8154 62.3499C86.6327 59.9976 88.1249 56.8928 88.125 53.7503V46.5833C88.125 45.4788 89.0204 44.5833 90.125 44.5833C91.2296 44.5833 92.125 45.4788 92.125 46.5833V53.7503C92.1249 58.2104 90.0001 62.3967 86.3789 65.4203C82.7682 68.435 77.9364 70.0833 72.958 70.0833H18.3916L31.3232 80.8812C32.1711 81.5891 32.285 82.8507 31.5771 83.6986C30.8692 84.5464 29.6076 84.6594 28.7598 83.9515L11.5928 69.6185C11.1378 69.2385 10.875 68.6761 10.875 68.0833C10.875 67.4906 11.1378 66.9282 11.5928 66.5482L28.7598 52.2152L28.9238 52.0921ZM10.875 39.4163V32.2503C10.875 27.7901 12.9998 23.6031 16.6211 20.5794C20.2318 17.5647 25.0637 15.9163 30.042 15.9163H84.6084L71.6768 5.11849L71.5264 4.97982C70.8176 4.25485 70.7591 3.09609 71.4229 2.30111C72.0865 1.50638 73.2364 1.35757 74.0762 1.92514L74.2402 2.04818L91.4072 16.3812C91.8622 16.7611 92.1249 17.3236 92.125 17.9163C92.125 18.5091 91.8621 19.0715 91.4072 19.4515L74.2402 33.7855L74.0762 33.9085C73.2364 34.476 72.0864 34.3264 71.4229 33.5316C70.7152 32.6837 70.829 31.423 71.6768 30.7152L84.6094 19.9163H30.042C25.9146 19.9163 22.0126 21.2885 19.1846 23.6497C16.3671 26.0022 14.875 29.1077 14.875 32.2503V39.4163C14.875 40.5209 13.9796 41.4163 12.875 41.4163C11.7704 41.4163 10.875 40.5209 10.875 39.4163Z" fill="#FFF9F9"/>
-</svg>
-
-
-                </button>
-                <button id="nextButton" class="control-button">NEXT</button>
-            </div>
-        </div>
-
     </main>
 
     <script>
         const PhotoApp = {
-            
             elements: {
-                main: document.getElementById('mainApp'),
                 video: document.getElementById('videoElement'),
                 canvas: document.getElementById('canvasElement'),
-                preview: document.getElementById('photoPreview'),
-                countdown: document.getElementById('countdownDisplay'),
-                error: document.getElementById('errorMessage'),
-                cameraSelect: document.getElementById('cameraSelect'),
-                shutter: document.getElementById('shutterButton'),
-                retake: document.getElementById('retakeButton'),
-                next: document.getElementById('nextButton'),
-                timers: {
-                    '0': document.getElementById('timer0s'),
-                    '3': document.getElementById('timer3s'),
-                    '5': document.getElementById('timer5s'),
-                }
+                flash: document.getElementById('flash-overlay'),
+                startView: document.getElementById('start-view'),
+                sessionView: document.getElementById('session-view'),
+                packageName: document.getElementById('packageName'),
+                photoCountInfo: document.getElementById('photoCountInfo'),
+                startSessionBtn: document.getElementById('startSessionBtn'),
+                countdownDisplay: document.getElementById('countdownDisplay'),
+                statusText: document.getElementById('statusText'),
+                errorMessage: document.getElementById('errorMessage'),
             },
-
             state: {
                 stream: null,
-                countdownInterval: null,
-                timerDuration: 0,
-                currentDeviceId: null,
+                photoCount: 0,
+                capturedImages: [],
+                isSessionRunning: false,
             },
 
-            
             async init() {
-                this.addEventListeners();
-                await this.populateCameraList();
-                
-                await this.startWebcam(this.elements.cameraSelect.value);
-            },
+                const packageInfo = sessionStorage.getItem('validatedPackage');
+                if (!packageInfo) {
+                    alert("Sesi tidak valid. Mengarahkan kembali...");
+                    window.location.href = 'user_select_package.html';
+                    return;
+                }
+                const packageData = JSON.parse(packageInfo);
+                this.state.photoCount = packageData.photo_count;
+                this.elements.packageName.textContent = packageData.name;
+                this.elements.photoCountInfo.textContent = `Anda akan mengambil ${this.state.photoCount} foto.`;
 
-            
-            addEventListeners() {
-                this.elements.cameraSelect.addEventListener('change', () => this.startWebcam(this.elements.cameraSelect.value));
-                this.elements.shutter.addEventListener('click', () => this.startCountdown());
-                this.elements.retake.addEventListener('click', () => this.startWebcam(this.state.currentDeviceId));
-                this.elements.next.addEventListener('click', () => {
-                    if (sessionStorage.getItem('capturedImage')) {
-                        window.location.href = 'user_templates.html';
-                    }
-                });
-
-                Object.entries(this.elements.timers).forEach(([duration, button]) => {
-                    button.addEventListener('click', () => {
-                        this.state.timerDuration = parseInt(duration, 10);
-                        Object.values(this.elements.timers).forEach(btn => btn.classList.remove('selected'));
-                        button.classList.add('selected');
-                    });
-                });
-            },
-
-            
-            async populateCameraList() {
                 try {
-                    const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
-                    tempStream.getTracks().forEach(track => track.stop()); 
-
-                    const devices = await navigator.mediaDevices.enumerateDevices();
-                    const videoDevices = devices.filter(device => device.kind === 'videoinput');
-                    
-                    this.elements.cameraSelect.innerHTML = ''; 
-                    if (videoDevices.length === 0) return;
-
-                    videoDevices.forEach((device, index) => {
-                        const option = document.createElement('option');
-                        option.value = device.deviceId;
-                        option.text = device.label || `Kamera ${index + 1}`;
-                        this.elements.cameraSelect.appendChild(option);
-                    });
-                    
-                    this.elements.cameraSelect.classList.toggle('hidden', videoDevices.length <= 1);
-
+                    await this.startWebcam();
+                    this.elements.startSessionBtn.addEventListener('click', () => this.startPhotoSession());
                 } catch (err) {
-                    console.error("Gagal mendapatkan daftar kamera.", err);
                     this.showError(true);
                 }
             },
 
-            
-            async startWebcam(deviceId = null) {
-                this.state.currentDeviceId = deviceId;
-                this.resetCaptureState(); 
-
-                const constraints = {
-                    video: {
-                        deviceId: deviceId ? { exact: deviceId } : undefined,
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 },
-                    },
-                    audio: false
-                };
-                
+            async startWebcam() {
+                if (this.state.stream) {
+                    this.state.stream.getTracks().forEach(track => track.stop());
+                }
+                const constraints = { video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false };
                 try {
-                    const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                    this.state.stream = stream;
-                    this.elements.video.srcObject = stream;
-                    this.elements.main.className = 'photobooth-app state-capture'; 
-                    this.showError(false); 
+                    this.state.stream = await navigator.mediaDevices.getUserMedia(constraints);
+                    this.elements.video.srcObject = this.state.stream;
+                    this.showError(false);
                 } catch (err) {
                     console.error("Error mengakses webcam: ", err);
-                    this.showError(true); 
+                    this.showError(true);
+                    throw err; // Lemparkan error agar init tahu ada masalah
                 }
             },
-
             
-            startCountdown() {
-                this.setControlsDisabled(true); 
+            showError(isError) {
+                this.elements.errorMessage.style.display = isError ? 'flex' : 'none';
+                this.elements.startView.style.display = isError ? 'none' : 'flex';
+            },
 
-                if (this.state.timerDuration > 0) {
-                    let count = this.state.timerDuration;
-                    this.elements.countdown.textContent = count;
-                    this.state.countdownInterval = setInterval(() => {
+            delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            },
+
+            async startPhotoSession() {
+                if (this.state.isSessionRunning) return;
+                this.state.isSessionRunning = true;
+
+                this.elements.startView.classList.add('hidden');
+                this.elements.sessionView.classList.remove('hidden');
+
+                for (let i = 1; i <= this.state.photoCount; i++) {
+                    this.elements.countdownDisplay.textContent = '';
+                    this.elements.statusText.textContent = `Bersiap untuk foto ${i} dari ${this.state.photoCount}`;
+                    await this.delay(2000); // Jeda sebelum setiap hitungan mundur
+
+                    await this.runCountdown(3);
+
+                    const imageDataUrl = this.captureSinglePhoto();
+                    this.state.capturedImages.push(imageDataUrl);
+                    this.triggerFlash();
+                }
+
+                this.finishSession();
+            },
+
+            runCountdown(seconds) {
+                return new Promise(resolve => {
+                    let count = seconds;
+                    this.elements.statusText.textContent = '';
+                    this.elements.countdownDisplay.textContent = count;
+                    const interval = setInterval(() => {
                         count--;
                         if (count > 0) {
-                            this.elements.countdown.textContent = count;
+                            this.elements.countdownDisplay.textContent = count;
                         } else {
-                            this.elements.countdown.textContent = '📸';
-                            clearInterval(this.state.countdownInterval);
-                            this.state.countdownInterval = null;
-                            setTimeout(() => this.capturePhoto(), 500); 
+                            clearInterval(interval);
+                            this.elements.countdownDisplay.textContent = '📸';
+                            setTimeout(resolve, 500);
                         }
                     }, 1000);
-                } else {
-                    this.capturePhoto();
-                }
+                });
+            },
+            
+            triggerFlash() {
+                this.elements.flash.classList.add('flash');
+                setTimeout(() => {
+                    this.elements.flash.classList.remove('flash');
+                }, 100);
             },
 
-            
-            capturePhoto() {
-                const { video, canvas, preview, main } = this.elements;
+            captureSinglePhoto() {
+                const { video, canvas } = this.elements;
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
                 canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-                
-                const imageDataUrl = canvas.toDataURL('image/png');
-                preview.src = imageDataUrl;
-                sessionStorage.setItem('capturedImage', imageDataUrl);
-                
-                main.className = 'photobooth-app state-preview'; 
-                
-                this.stopStream(); 
-                this.setControlsDisabled(false); 
+                return canvas.toDataURL('image/png');
             },
 
-            
-            stopStream() {
-                if (this.state.stream) {
-                    this.state.stream.getTracks().forEach(track => track.stop());
-                    this.state.stream = null;
-                }
-            },
-
-            
-            resetCaptureState() {
-                this.stopStream();
-                if (this.state.countdownInterval) {
-                    clearInterval(this.state.countdownInterval);
-                    this.state.countdownInterval = null;
-                }
-                this.elements.countdown.textContent = '';
-                sessionStorage.removeItem('capturedImage');
-            },
-
-            
-            showError(isError) {
-                this.elements.error.style.display = isError ? 'block' : 'none';
+            finishSession() {
+                this.elements.countdownDisplay.textContent = 'Selesai!';
+                this.elements.statusText.textContent = 'Mempersiapkan hasil foto Anda...';
+                sessionStorage.setItem('capturedImages', JSON.stringify(this.state.capturedImages));
+                sessionStorage.removeItem('capturedImage'); // Hapus data lama jika ada
                 
-                this.elements.shutter.style.visibility = isError ? 'hidden' : 'visible';
-                this.elements.cameraSelect.style.visibility = isError ? 'hidden' : 'visible';
-            },
-            
-            
-            setControlsDisabled(disabled) {
-                this.elements.shutter.disabled = disabled;
-                Object.values(this.elements.timers).forEach(btn => btn.disabled = disabled);
-                this.elements.cameraSelect.disabled = disabled;
+                setTimeout(() => {
+                    window.location.href = 'user_templates.html';
+                }, 1500);
             }
         };
 
-        document.addEventListener('DOMContentLoaded', () => {
-            PhotoApp.init();
-        });
+        document.addEventListener('DOMContentLoaded', () => PhotoApp.init());
     </script>
 </body>
 </html>

@@ -124,13 +124,44 @@
             let layoutId;
             let scaleFactor = 1;
 
-            function renderCanvasWhenReady(imageUrl, slotsData, originalWidth, originalHeight) {
+            /**
+             * Mengonversi URL gambar menjadi data URL Base64.
+             * @param {string} url URL gambar yang akan dikonversi.
+             * @returns {Promise<string>} Promise yang resolve dengan data URL Base64.
+             */
+            function convertImageUrlToBase64(url) {
+                // Fungsi ini mengambil gambar dari URL dan mengubahnya menjadi format Base64
+                // agar bisa disimpan di localStorage.
+                return new Promise((resolve, reject) => {
+                    fetch(url)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`Network response was not ok, status: ${response.status}`);
+                            }
+                            return response.blob();
+                        })
+                        .then(blob => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                                resolve(reader.result);
+                            };
+                            reader.onerror = reject;
+                            reader.readAsDataURL(blob);
+                        })
+                        .catch(error => {
+                            console.error('Error converting image URL to Base64:', error);
+                            reject(error);
+                        });
+                });
+            }
+
+            function renderCanvasWhenReady(imageDataUrl, slotsData, originalWidth, originalHeight) {
                 const tryRender = () => {
                     const containerWidth = canvasContainer.offsetWidth;
                     const containerHeight = canvasContainer.offsetHeight;
 
                     if (containerWidth > 0 && containerHeight > 0) {
-                        initializeCanvas(imageUrl, slotsData, originalWidth, originalHeight, containerWidth, containerHeight);
+                        initializeCanvas(imageDataUrl, slotsData, originalWidth, originalHeight, containerWidth, containerHeight);
                     } else {
                         requestAnimationFrame(tryRender);
                     }
@@ -138,7 +169,7 @@
                 requestAnimationFrame(tryRender);
             }
 
-            function initializeCanvas(imageUrl, slotsData, originalWidth, originalHeight, containerWidth, containerHeight) {
+            function initializeCanvas(imageDataUrl, slotsData, originalWidth, originalHeight, containerWidth, containerHeight) {
                 if (canvas) { canvas.dispose(); }
 
                 const scale = Math.min(containerWidth / originalWidth, containerHeight / originalHeight);
@@ -150,7 +181,7 @@
                 canvas.setWidth(scaledWidth);
                 canvas.setHeight(scaledHeight);
 
-                fabric.Image.fromURL(imageUrl, (img) => {
+                fabric.Image.fromURL(imageDataUrl, (img) => {
                     canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas), {
                         scaleX: scaleFactor,
                         scaleY: scaleFactor,
@@ -179,26 +210,53 @@
                     window.location.href = 'admin_manage_layouts.html';
                     return;
                 }
+                
+                const storageKey = `layout_image_base64_${layoutId}`;
 
                 try {
-                    const response = await fetch(`${API_BASE_URL}/layouts/${layoutId}`, {
+                    const layoutResponse = await fetch(`${API_BASE_URL}/layouts/${layoutId}`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
-                    if (!response.ok) throw new Error('Could not fetch layout data.');
-                    
-                    const layout = await response.json();
+                    if (!layoutResponse.ok) throw new Error('Could not fetch layout metadata.');
+                    const layout = await layoutResponse.json();
+
                     pageTitle.textContent = `Edit Layout: ${layout.name}`;
                     nameInput.value = layout.name;
-                    
-                    const borderImageUrl = `${API_BASE_URL}/${layout.border_image_path.replace(/\\/g, '/')}`;
-                    currentBorderImage.src = borderImageUrl;
 
-                    const img = new Image();
-                    img.src = borderImageUrl;
-                    img.crossOrigin = "Anonymous";
-                    img.onload = () => {
-                         renderCanvasWhenReady(borderImageUrl, layout.slots, img.width, img.height);
-                    };
+                    // Langkah 1: Coba ambil gambar Base64 dari localStorage
+                    let imageDataUrl = localStorage.getItem(storageKey);
+
+                    // Langkah 2: Jika tidak ada, ambil dari server, konversi ke Base64, lalu simpan
+                    if (!imageDataUrl) {
+                        console.log(`Image for layout ${layoutId} not in localStorage. Fetching from server...`);
+                        const borderImageUrl = `${API_BASE_URL}/${layout.border_image_path.replace(/\\/g, '/')}`;
+                        
+                        try {
+                            // Proses konversi yang mungkin gagal karena CORS
+                            imageDataUrl = await convertImageUrlToBase64(borderImageUrl);
+                            
+                            // Jika berhasil, simpan string Base64 ke localStorage
+                            console.log(`Successfully converted image to Base64. Storing in localStorage with key: ${storageKey}`);
+                            localStorage.setItem(storageKey, imageDataUrl);
+
+                        } catch (conversionError) {
+                            // Jika konversi gagal, tampilkan pesan error yang spesifik
+                            displayMessage(`Failed to fetch image. This is likely a CORS issue. Please check your backend configuration. Error: ${conversionError.message}`, 'error');
+                            return; // Hentikan eksekusi jika gambar tidak bisa didapat
+                        }
+                    } else {
+                        console.log(`Image for layout ${layoutId} loaded from localStorage.`);
+                    }
+
+                    // Langkah 3: Gunakan data gambar Base64 untuk ditampilkan
+                    if (imageDataUrl) {
+                        currentBorderImage.src = imageDataUrl;
+                        const img = new Image();
+                        img.src = imageDataUrl;
+                        img.onload = () => {
+                             renderCanvasWhenReady(imageDataUrl, layout.slots, img.width, img.height);
+                        };
+                    }
 
                 } catch (error) {
                     displayMessage(error.message, 'error');
@@ -227,13 +285,19 @@
                 if (file) {
                     const reader = new FileReader();
                     reader.onload = (e) => {
-                        const newImageUrl = e.target.result;
-                        currentBorderImage.src = newImageUrl;
+                        const newImageDataUrl = e.target.result;
+                        
+                        // Simpan gambar baru (sudah dalam format Base64) ke localStorage
+                        const storageKey = `layout_image_base64_${layoutId}`;
+                        localStorage.setItem(storageKey, newImageDataUrl);
+
+                        // Perbarui pratinjau dan canvas
+                        currentBorderImage.src = newImageDataUrl;
                         const img = new Image();
                         img.onload = () => {
-                             renderCanvasWhenReady(newImageUrl, [], img.width, img.height);
+                             renderCanvasWhenReady(newImageDataUrl, [], img.width, img.height);
                         };
-                        img.src = newImageUrl;
+                        img.src = newImageDataUrl;
                     };
                     reader.readAsDataURL(file);
                 }
@@ -270,6 +334,8 @@
                         throw new Error(errorData.detail || 'Failed to update layout');
                     }
                     alert('Layout updated successfully!');
+                    // Hapus cache localStorage setelah berhasil menyimpan agar data baru diambil lain kali
+                    localStorage.removeItem(`layout_image_base64_${layoutId}`);
                     window.location.href = 'admin_manage_layouts.html';
                 } catch (error) {
                     displayMessage(error.message, 'error');
@@ -283,7 +349,7 @@
                 messageDiv.textContent = msg;
                 messageDiv.className = `message ${type}`;
                 messageDiv.style.display = 'block';
-                setTimeout(() => { messageDiv.style.display = 'none'; }, 4000);
+                setTimeout(() => { messageDiv.style.display = 'none'; }, 5000); // Waktu diperpanjang agar pesan error lebih terbaca
             }
 
             loadLayoutData();

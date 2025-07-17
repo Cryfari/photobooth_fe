@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction History - Admin Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Menggunakan gaya CSS yang konsisten dengan halaman admin lainnya */
+        :root {
+            --sidebar-bg: #FFFFFF;
+            --main-bg: #F7F8FC;
+            --card-bg: #FFFFFF;
+            --primary-orange: #F58D3D;
+            --text-dark: #252733;
+            --text-gray: #9FA2B4;
+            --text-inactive: #4B5563;
+            --border-color: #DFE0EB;
+            --danger-color: #D73737;
+            --success-color: #29CC97;
+            --pending-color: #FFC107; /* Oranye/Kuning untuk pending */
+            --refunded-color: #6c757d; /* Abu-abu untuk refunded */
+            --font-family: 'Mulish', sans-serif;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        body { margin: 0; font-family: var(--font-family); background-color: var(--main-bg); color: var(--text-dark); font-size: 14px; }
+        .admin-layout { display: flex; min-height: 100vh; }
+        .sidebar { width: 255px; background-color: var(--sidebar-bg); border-right: 1px solid var(--border-color); flex-shrink: 0; }
+        .main-content { flex-grow: 1; padding: 30px; }
+        .content-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .content-header h1 { font-size: 1.5rem; font-weight: 700; margin: 0; }
+        .content-card { background-color: var(--card-bg); border-radius: 8px; border: 1px solid var(--border-color); }
+        .card-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 20px 30px; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; gap: 20px; }
+        .filter-group { display: flex; gap: 15px; align-items: center; }
+        .filter-group label { font-weight: 600; }
+        .filter-group select, .filter-group input { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); font-family: inherit; }
+        .export-button { background-color: var(--success-color); color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; text-decoration: none; }
+        .table-container { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 20px 30px; text-align: left; border-bottom: 1px solid var(--border-color); vertical-align: middle; white-space: nowrap; }
+        th { color: var(--text-gray); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; }
+        table tr:last-child td { border-bottom: none; }
+        .status-badge { padding: 5px 12px; border-radius: 100px; font-weight: 700; font-size: 0.8rem; text-transform: capitalize; }
+        .status-badge.completed, .status-badge.settlement { color: var(--success-color); background-color: #EAFBF5; }
+        .status-badge.pending { color: var(--pending-color); background-color: #FFF9E6; }
+        .status-badge.failed, .status-badge.expire, .status-badge.cancel { color: var(--danger-color); background-color: #FEE2E2; }
+        .status-badge.refunded { color: var(--refunded-color); background-color: #F8F9FA; }
+        .action-button { background: none; border: 1px solid var(--border-color); color: var(--text-dark); border-radius: 6px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
+        
+        .col-trans-code { max-width: 220px; width: 20%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .col-date { width: 20%; }
+
+        /* --- Gaya untuk Modal --- */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(37, 39, 51, 0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0s 0.3s; }
+        .modal-overlay.visible { opacity: 1; visibility: visible; transition: opacity 0.3s ease; }
+        .modal-content { background-color: var(--card-bg); padding: 30px; border-radius: 8px; width: 90%; max-width: 500px; text-align: left; transform: scale(0.95); transition: transform 0.3s ease; }
+        .modal-overlay.visible .modal-content { transform: scale(1); }
+        .modal-content h2 { margin: 0 0 20px 0; font-size: 1.2rem; color: var(--text-dark); border-bottom: 1px solid var(--border-color); padding-bottom: 15px; }
+        .modal-body .detail-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+        .modal-body .detail-item:last-child { border-bottom: none; }
+        .modal-body .detail-item strong { color: var(--text-gray); font-weight: 600; flex-shrink: 0; padding-right: 10px;}
+        .modal-body .detail-item span { font-weight: 700; word-break: break-all; text-align: right; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px; }
+        .modal-button { padding: 10px 24px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 14px; border: 1px solid transparent; }
+        .modal-button.close { background-color: var(--card-bg); color: var(--text-gray); border-color: var(--border-color); }
+        .modal-button.refund { background-color: var(--danger-color); color: white; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { font-weight: 600; margin-bottom: 8px; display: block; }
+        .form-group textarea { width: 100%; min-height: 80px; padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); font-family: inherit; resize: vertical; }
+
+        /* --- Gaya untuk Paginasi --- */
+        .pagination-controls { display: flex; justify-content: space-between; align-items: center; padding: 24px 30px; color: var(--text-gray); flex-wrap: wrap; gap: 20px; }
+        .pagination-info { flex-shrink: 0; color: var(--text-dark); font-weight: 600; }
+        .items-per-page-selector { display: flex; align-items: center; gap: 8px; margin: 0 auto; }
+        #itemsPerPageSelect { font-family: inherit; font-weight: 600; color: var(--text-dark); border: 1px solid var(--border-color); border-radius: 6px; padding: 5px; }
+        .pagination-nav { display: flex; align-items: center; gap: 4px; }
+        .pagination-nav button { background: none; border: 1px solid transparent; color: var(--text-gray); font-weight: 600; padding: 7px 12px; margin: 0; cursor: pointer; border-radius: 6px; transition: all 0.2s ease-in-out; min-width: 36px; text-align: center; }
+        .pagination-nav button:hover:not(.active):not(:disabled) { border-color: var(--border-color); background-color: var(--main-bg); }
+        .pagination-nav button.active { border: 2px solid var(--primary-orange); color: var(--primary-orange); font-weight: 700; padding: 6px 11px; }
+        .pagination-nav button:disabled { opacity: 0.5; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <aside class="sidebar"></aside>
+
+        <main class="main-content">
+            <header class="content-header">
+                <h1>Transaction History</h1>
+            </header>
+
+            <div class="content-card">
+                <div class="card-toolbar">
+                    <div class="filter-group">
+                        <label for="statusFilter">Filter by Status:</label>
+                        <select id="statusFilter">
+                            <option value="">All</option>
+                            <option value="completed">Completed</option>
+                            <option value="pending">Pending</option>
+                            <option value="failed">Failed</option>
+                            <option value="refunded">Refunded</option>
+                        </select>
+                    </div>
+                    <a href="#" id="exportCsvButton" class="export-button">Export to CSV</a>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="col-trans-code">Transaction Code</th>
+                                <th>Package</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Payment Method</th>
+                                <th class="col-date">Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionsTableBody"></tbody>
+                    </table>
+                </div>
+                <div class="pagination-controls">
+                    <div id="paginationInfo"></div>
+                    <div class="items-per-page-selector">
+                        <select id="itemsPerPageSelect">
+                            <option value="10" selected>10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                        </select>
+                        <span>per page</span>
+                    </div>
+                    <div id="paginationNav" class="pagination-nav"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal untuk Detail Transaksi -->
+    <div id="detailsModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Transaction Details</h2>
+            <div id="modalBody" class="modal-body"></div>
+            <div id="modalActions" class="modal-actions"></div>
+        </div>
+    </div>
+    
+    <!-- Modal untuk Konfirmasi Refund -->
+    <div id="refundModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Process Refund</h2>
+            <div class="form-group">
+                <label for="refundNotes">Reason for Refund (Optional)</label>
+                <textarea id="refundNotes" placeholder="e.g., System error, customer request..."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button id="cancelRefundBtn" class="modal-button close">Cancel</button>
+                <button id="confirmRefundBtn" class="modal-button refund">Confirm Refund</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/admin_sidebar.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            createSidebar('transactions'); 
+            
+            const API_BASE_URL = 'http://127.0.0.1:8000';
+            const token = localStorage.getItem('adminToken');
+            if (!token) {
+                window.location.href = 'admin_login.html';
+                return;
+            }
+
+            let allTransactions = [];
+            let currentPage = 1;
+            let itemsPerPage = 10;
+
+            const tableBody = document.getElementById('transactionsTableBody');
+            const statusFilter = document.getElementById('statusFilter');
+            const exportCsvButton = document.getElementById('exportCsvButton');
+            const itemsPerPageSelect = document.getElementById('itemsPerPageSelect');
+            const paginationNav = document.getElementById('paginationNav');
+            const paginationInfo = document.getElementById('paginationInfo');
+            
+            const detailsModal = document.getElementById('detailsModal');
+            const modalBody = document.getElementById('modalBody');
+            const modalActions = document.getElementById('modalActions');
+            
+            const refundModal = document.getElementById('refundModal');
+            const refundNotes = document.getElementById('refundNotes');
+            const confirmRefundBtn = document.getElementById('confirmRefundBtn');
+            const cancelRefundBtn = document.getElementById('cancelRefundBtn');
+
+            function formatRupiah(number) {
+                return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
+            }
+
+            function formatDateTime(dateString, options = { dateStyle: 'full', timeStyle: 'short' }) {
+                if (!dateString) return 'N/A';
+                return new Date(dateString).toLocaleString('id-ID', options);
+            }
+
+            async function fetchAllTransactions() {
+                tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;">Loading all transactions...</td></tr>';
+                const url = `${API_BASE_URL}/transactions/?limit=1000`; 
+
+                try {
+                    const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+                    if (response.status === 401) { window.location.href = 'admin_login.html'; return; }
+                    if (!response.ok) throw new Error('Failed to load transactions.');
+                    
+                    allTransactions = await response.json();
+                    currentPage = 1;
+                    displayPage();
+
+                } catch (error) {
+                    console.error(error);
+                    tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--danger-color);">Error loading data. Please try again.</td></tr>';
+                }
+            }
+            
+            function displayPage() {
+                const status = statusFilter.value;
+                const filteredTransactions = status 
+                    ? allTransactions.filter(tx => tx.status && tx.status.toLowerCase() === status)
+                    : allTransactions;
+
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const endIndex = startIndex + itemsPerPage;
+                const paginatedTransactions = filteredTransactions.slice(startIndex, endIndex);
+
+                renderTable(paginatedTransactions);
+                renderPagination(filteredTransactions.length);
+            }
+
+            function renderTable(transactions) {
+                tableBody.innerHTML = '';
+                if (transactions.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;">No transactions found for this filter.</td></tr>';
+                    return;
+                }
+
+                transactions.forEach(tx => {
+                    const row = document.createElement('tr');
+                    const statusClass = tx.status ? tx.status.toLowerCase().replace(/\s+/g, '-') : 'unknown';
+                    
+                    const shortDate = formatDateTime(tx.created_at, { dateStyle: 'medium', timeStyle: 'short' });
+                    const fullDate = formatDateTime(tx.created_at);
+
+                    row.innerHTML = `
+                        <td class="col-trans-code" title="${tx.transaction_code}"><strong>${tx.transaction_code}</strong></td>
+                        <td>${tx.ticket && tx.ticket.package ? tx.ticket.package.name : 'N/A'}</td>
+                        <td>${formatRupiah(tx.amount)}</td>
+                        <td><span class="status-badge ${statusClass}">${tx.status || 'Unknown'}</span></td>
+                        <td>${tx.payment_method || 'N/A'}</td>
+                        <td class="col-date" title="${fullDate}">${shortDate}</td>
+                        <td>
+                            <button class="action-button" data-tx-id="${tx.id}">Details</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+
+            function renderPagination(totalItems) {
+                const totalPages = Math.ceil(totalItems / itemsPerPage);
+                paginationNav.innerHTML = '';
+                
+                const startItem = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+                const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+                paginationInfo.textContent = `Showing ${startItem}-${endItem} of ${totalItems}`;
+
+                if (totalPages <= 1) {
+                    paginationNav.style.visibility = 'hidden';
+                    paginationInfo.style.visibility = totalItems > 0 ? 'visible' : 'hidden';
+                    return;
+                }
+                paginationNav.style.visibility = 'visible';
+                paginationInfo.style.visibility = 'visible';
+
+                const prevButton = document.createElement('button');
+                prevButton.textContent = '‹';
+                prevButton.disabled = currentPage === 1;
+                prevButton.addEventListener('click', () => { if (currentPage > 1) { currentPage--; displayPage(); } });
+                paginationNav.appendChild(prevButton);
+
+                for (let i = 1; i <= totalPages; i++) {
+                    const pageButton = document.createElement('button');
+                    pageButton.textContent = i;
+                    if (i === currentPage) { pageButton.classList.add('active'); }
+                    pageButton.addEventListener('click', () => { currentPage = i; displayPage(); });
+                    paginationNav.appendChild(pageButton);
+                }
+
+                const nextButton = document.createElement('button');
+                nextButton.textContent = '›';
+                nextButton.disabled = currentPage === totalPages;
+                nextButton.addEventListener('click', () => { if (currentPage < totalPages) { currentPage++; displayPage(); } });
+                paginationNav.appendChild(nextButton);
+            }
+
+            async function showDetailsModal(transactionId) {
+                modalBody.innerHTML = '<p>Loading details...</p>';
+                modalActions.innerHTML = '';
+                detailsModal.classList.add('visible');
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/transactions/${transactionId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!response.ok) throw new Error('Could not fetch transaction details.');
+                    
+                    const tx = await response.json();
+
+                    modalBody.innerHTML = `
+                        <div class="detail-item"><strong>Transaction Code:</strong> <span>${tx.transaction_code}</span></div>
+                        <div class="detail-item"><strong>Order ID:</strong> <span>${tx.order_id || 'N/A'}</span></div>
+                        <div class="detail-item"><strong>Status:</strong> <span>${tx.status}</span></div>
+                        <div class="detail-item"><strong>Amount:</strong> <span>${formatRupiah(tx.amount)}</span></div>
+                        <div class="detail-item"><strong>Payment Method:</strong> <span>${tx.payment_method || 'N/A'}</span></div>
+                        <div class="detail-item"><strong>Created At:</strong> <span>${formatDateTime(tx.created_at)}</span></div>
+                        <div class="detail-item"><strong>Last Updated:</strong> <span>${formatDateTime(tx.updated_at)}</span></div>
+                        <div class="detail-item" style="margin-top: 15px; padding-top: 15px; border-top: 2px solid var(--border-color);"><strong>Package:</strong> <span>${tx.ticket && tx.ticket.package ? tx.ticket.package.name : 'N/A'}</span></div>
+                        <div class="detail-item"><strong>Ticket Token:</strong> <span>${tx.ticket ? tx.ticket.token : 'N/A'}</span></div>
+                        <div class="detail-item"><strong>Ticket Expires:</strong> <span>${tx.ticket ? formatDateTime(tx.ticket.expires_at) : 'N/A'}</span></div>
+                        <div class="detail-item"><strong>Notes:</strong> <span>${tx.notes || 'No notes.'}</span></div>
+                    `;
+
+                    const closeBtn = document.createElement('button');
+                    closeBtn.textContent = 'Close';
+                    closeBtn.className = 'modal-button close';
+                    closeBtn.onclick = () => detailsModal.classList.remove('visible');
+                    
+                    if (tx.status && (tx.status.toLowerCase() === 'completed' || tx.status.toLowerCase() === 'settlement')) {
+                        const refundBtn = document.createElement('button');
+                        refundBtn.textContent = 'Refund Transaction';
+                        refundBtn.className = 'modal-button refund';
+                        refundBtn.onclick = () => showRefundModal(transactionId);
+                        modalActions.appendChild(refundBtn);
+                    }
+                    
+                    modalActions.appendChild(closeBtn);
+
+                } catch (error) {
+                    modalBody.innerHTML = `<p style="color: var(--danger-color);">${error.message}</p>`;
+                }
+            }
+
+            function showRefundModal(transactionId) {
+                detailsModal.classList.remove('visible');
+                refundNotes.value = ''; // Kosongkan catatan sebelumnya
+                confirmRefundBtn.dataset.txId = transactionId; // Simpan ID transaksi di tombol
+                refundModal.classList.add('visible');
+            }
+            
+            async function handleRefund() {
+                const transactionId = confirmRefundBtn.dataset.txId;
+                const notesValue = refundNotes.value;
+
+                confirmRefundBtn.disabled = true;
+                confirmRefundBtn.textContent = 'Processing...';
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/transactions/${transactionId}/refund`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ notes: notesValue })
+                    });
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.detail || 'Failed to process refund.');
+                    }
+                    
+                    alert('Transaction has been successfully refunded.');
+                    refundModal.classList.remove('visible');
+                    fetchAllTransactions();
+
+                } catch (error) {
+                    alert(`Error: ${error.message}`);
+                } finally {
+                    confirmRefundBtn.disabled = false;
+                    confirmRefundBtn.textContent = 'Confirm Refund';
+                }
+            }
+
+            // Event Listeners
+            statusFilter.addEventListener('change', () => { currentPage = 1; displayPage(); });
+            itemsPerPageSelect.addEventListener('change', () => { itemsPerPage = parseInt(itemsPerPageSelect.value, 10); currentPage = 1; displayPage(); });
+            
+            exportCsvButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                let url = `${API_BASE_URL}/transactions/export/csv`;
+                fetch(url, { headers: { 'Authorization': `Bearer ${token}` }})
+                    .then(resp => resp.blob())
+                    .then(blob => {
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = `transactions-${new Date().toISOString().slice(0,10)}.csv`;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        a.remove();
+                    })
+                    .catch(() => alert('Could not export data.'));
+            });
+
+            tableBody.addEventListener('click', (event) => {
+                const button = event.target.closest('.action-button');
+                if (button) {
+                    const txId = button.dataset.txId;
+                    if (txId) {
+                        showDetailsModal(txId);
+                    }
+                }
+            });
+
+            detailsModal.addEventListener('click', (event) => {
+                if (event.target === detailsModal) {
+                    detailsModal.classList.remove('visible');
+                }
+            });
+            
+            // Event listeners untuk modal refund
+            cancelRefundBtn.addEventListener('click', () => refundModal.classList.remove('visible'));
+            confirmRefundBtn.addEventListener('click', handleRefund);
+            refundModal.addEventListener('click', (event) => {
+                if (event.target === refundModal) {
+                    refundModal.classList.remove('visible');
+                }
+            });
+
+            fetchAllTransactions();
+        });
+    </script>
+</body>
+</html>
