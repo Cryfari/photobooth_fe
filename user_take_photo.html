@@ -13,6 +13,8 @@
             --frame-bg-color: #FEFBF5; 
             --text-color: #FFFFFF;
             --font-family: 'Kdam Thmor Pro', 'Segoe UI', sans-serif;
+            --button-secondary-bg: #e0e0e0;
+            --button-secondary-text: #333;
         }
         *, *::before, *::after { box-sizing: border-box; }
         html, body {
@@ -42,7 +44,7 @@
             justify-content: center;
             align-items: center;
         }
-        video, canvas {
+        video, canvas, #reviewImage {
             width: 100%;
             height: 100%;
             object-fit: cover;
@@ -58,30 +60,49 @@
             text-align: center;
             color: var(--bg-color);
             background-color: rgba(254, 251, 245, 0.8);
+            transition: opacity 0.3s ease;
         }
-        .photobooth-overlay.hidden { display: none; }
+        .photobooth-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
         
         /* Tampilan Awal */
         #start-view h2 { font-size: 2rem; }
         #start-view p { font-size: 1.2rem; }
-        #startSessionBtn {
+        .action-button {
             font-family: inherit;
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             font-weight: bold;
             color: white;
             background-color: var(--bg-color);
             border: none;
             border-radius: 40px;
             cursor: pointer;
-            padding: 15px 50px;
-            margin-top: 20px;
-            transition: transform 0.2s;
+            padding: 15px 40px;
+            margin: 10px;
+            transition: transform 0.2s, background-color 0.2s;
         }
-        #startSessionBtn:hover { transform: scale(1.05); }
+        .action-button:hover { transform: scale(1.05); }
+        .action-button.secondary {
+            background-color: var(--button-secondary-bg);
+            color: var(--button-secondary-text);
+        }
 
         /* Tampilan Sesi Foto */
-        #session-view h2 { font-size: 5rem; font-weight: bold; text-shadow: 0 0 10px rgba(255, 255, 255, 0.5); }
-        #session-view p { font-size: 1.5rem; }
+        #session-view {
+            background-color: transparent;
+            color: white;
+        }
+        #session-view h2 { 
+            font-size: 5rem; 
+            font-weight: bold; 
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
+        }
+        #session-view p { 
+            font-size: 1.5rem; 
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+        }
         #flash-overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -91,6 +112,41 @@
             transition: opacity 0.5s ease;
         }
         #flash-overlay.flash { opacity: 1; transition: opacity 0.05s ease; }
+
+        /* Tampilan Review */
+        #review-view {
+            flex-direction: row;
+            background-color: transparent;
+        }
+        .review-photo-container {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+        }
+        .review-controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.4);
+            padding: 15px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        #reviewCountdown {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: white;
+            background-color: var(--bg-color);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 2px solid white;
+        }
 
         #errorMessage {
             font-size: 1.2rem;
@@ -114,13 +170,25 @@
             <div id="start-view" class="photobooth-overlay">
                 <h2 id="packageName">Nama Paket</h2>
                 <p id="photoCountInfo">Anda akan mengambil X foto.</p>
-                <button id="startSessionBtn">Mulai Sesi Foto</button>
+                <button id="startSessionBtn" class="action-button">Mulai Sesi Foto</button>
             </div>
 
             <!-- Tampilan Sesi Berlangsung -->
             <div id="session-view" class="photobooth-overlay hidden">
                 <h2 id="countdownDisplay"></h2>
                 <p id="statusText"></p>
+            </div>
+            
+            <!-- Tampilan Review Foto -->
+            <div id="review-view" class="photobooth-overlay hidden">
+                <div class="review-photo-container">
+                    <img id="reviewImage" src="" alt="Hasil Foto">
+                </div>
+                <div class="review-controls">
+                    <button id="retakePhotoBtn" class="action-button secondary">Ulangi</button>
+                    <div id="reviewCountdown">5</div>
+                    <button id="keepPhotoBtn" class="action-button">Simpan</button>
+                </div>
             </div>
 
             <p id="errorMessage">Kamera tidak dapat diakses. <br>Mohon berikan izin pada browser Anda.</p>
@@ -135,11 +203,16 @@
                 flash: document.getElementById('flash-overlay'),
                 startView: document.getElementById('start-view'),
                 sessionView: document.getElementById('session-view'),
+                reviewView: document.getElementById('review-view'),
                 packageName: document.getElementById('packageName'),
                 photoCountInfo: document.getElementById('photoCountInfo'),
                 startSessionBtn: document.getElementById('startSessionBtn'),
                 countdownDisplay: document.getElementById('countdownDisplay'),
                 statusText: document.getElementById('statusText'),
+                reviewImage: document.getElementById('reviewImage'),
+                keepPhotoBtn: document.getElementById('keepPhotoBtn'),
+                retakePhotoBtn: document.getElementById('retakePhotoBtn'),
+                reviewCountdown: document.getElementById('reviewCountdown'),
                 errorMessage: document.getElementById('errorMessage'),
             },
             state: {
@@ -147,13 +220,16 @@
                 photoCount: 0,
                 capturedImages: [],
                 isSessionRunning: false,
+                currentPhotoIndex: 0,
+                reviewTimeout: null,
+                reviewInterval: null,
             },
 
             async init() {
                 const packageInfo = sessionStorage.getItem('validatedPackage');
                 if (!packageInfo) {
                     alert("Sesi tidak valid. Mengarahkan kembali...");
-                    window.location.href = 'user_select_package.html';
+                    window.location.href = 'user_validate_ticket.html';
                     return;
                 }
                 const packageData = JSON.parse(packageInfo);
@@ -181,7 +257,7 @@
                 } catch (err) {
                     console.error("Error mengakses webcam: ", err);
                     this.showError(true);
-                    throw err; // Lemparkan error agar init tahu ada masalah
+                    throw err;
                 }
             },
             
@@ -194,26 +270,73 @@
                 return new Promise(resolve => setTimeout(resolve, ms));
             },
 
-            async startPhotoSession() {
+            startPhotoSession() {
                 if (this.state.isSessionRunning) return;
                 this.state.isSessionRunning = true;
-
-                this.elements.startView.classList.add('hidden');
-                this.elements.sessionView.classList.remove('hidden');
-
-                for (let i = 1; i <= this.state.photoCount; i++) {
-                    this.elements.countdownDisplay.textContent = '';
-                    this.elements.statusText.textContent = `Bersiap untuk foto ${i} dari ${this.state.photoCount}`;
-                    await this.delay(2000); // Jeda sebelum setiap hitungan mundur
-
-                    await this.runCountdown(3);
-
-                    const imageDataUrl = this.captureSinglePhoto();
-                    this.state.capturedImages.push(imageDataUrl);
-                    this.triggerFlash();
+                this.elements.startView.remove();
+                this.takeNextPhoto();
+            },
+            
+            async takeNextPhoto() {
+                if (this.state.capturedImages.length >= this.state.photoCount) {
+                    this.finishSession();
+                    return;
                 }
 
-                this.finishSession();
+                this.elements.reviewView.classList.add('hidden');
+                this.elements.video.style.display = 'block';
+                this.elements.sessionView.classList.remove('hidden');
+
+                const photoNumber = this.state.capturedImages.length + 1;
+                this.elements.statusText.textContent = `Bersiap untuk foto ${photoNumber} dari ${this.state.photoCount}`;
+                await this.delay(2000);
+
+                await this.runCountdown(3);
+
+                const imageDataUrl = this.captureSinglePhoto();
+                this.triggerFlash();
+                this.showReview(imageDataUrl);
+            },
+
+            showReview(imageDataUrl) {
+                this.elements.sessionView.classList.add('hidden');
+                this.elements.video.style.display = 'none';
+                this.elements.reviewView.classList.remove('hidden');
+                this.elements.reviewImage.src = imageDataUrl;
+
+                let countdown = 5;
+                this.elements.reviewCountdown.textContent = countdown;
+
+                this.state.reviewInterval = setInterval(() => {
+                    countdown--;
+                    this.elements.reviewCountdown.textContent = countdown;
+                }, 1000);
+
+                this.state.reviewTimeout = setTimeout(() => {
+                    this.keepAndContinue(imageDataUrl);
+                }, 5000);
+
+                this.elements.keepPhotoBtn.onclick = () => {
+                    this.keepAndContinue(imageDataUrl);
+                };
+
+                this.elements.retakePhotoBtn.onclick = () => {
+                    this.clearReviewTimers();
+                    this.takeNextPhoto();
+                };
+            },
+
+            clearReviewTimers() {
+                clearTimeout(this.state.reviewTimeout);
+                clearInterval(this.state.reviewInterval);
+                this.state.reviewTimeout = null;
+                this.state.reviewInterval = null;
+            },
+
+            keepAndContinue(imageDataUrl) {
+                this.clearReviewTimers();
+                this.state.capturedImages.push(imageDataUrl);
+                this.takeNextPhoto();
             },
 
             runCountdown(seconds) {
@@ -250,10 +373,13 @@
             },
 
             finishSession() {
+                this.elements.reviewView.classList.add('hidden');
+                this.elements.sessionView.classList.remove('hidden');
                 this.elements.countdownDisplay.textContent = 'Selesai!';
                 this.elements.statusText.textContent = 'Mempersiapkan hasil foto Anda...';
+                
                 sessionStorage.setItem('capturedImages', JSON.stringify(this.state.capturedImages));
-                sessionStorage.removeItem('capturedImage'); // Hapus data lama jika ada
+                sessionStorage.removeItem('capturedImage'); 
                 
                 setTimeout(() => {
                     window.location.href = 'user_templates.html';

@@ -46,7 +46,7 @@
             flex-shrink: 0;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: center; /* Center content when regenerate button is not present */
             padding: 10px 20px;
             background-color: #f0f2f5;
             min-height: 80px;
@@ -55,8 +55,8 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            flex: 1; /* Allow this element to grow and shrink */
-            min-width: 0; /* Prevent content from pushing the container */
+            flex: 1; 
+            min-width: 0; 
         }
         .result-card .qr-container img {
             width: 60px;
@@ -83,8 +83,12 @@
             border-radius: 20px;
             cursor: pointer;
             padding: 8px 16px;
-            transition: background-color 0.2s, color 0.2s, opacity 0.2s;
+            transition: background-color 0.2s, color 0.2s, opacity 0.2s, visibility 0.2s;
             flex-shrink: 0;
+        }
+        .regenerate-button.hidden {
+            visibility: hidden;
+            opacity: 0;
         }
         .regenerate-button:hover:not(:disabled) {
             background-color: var(--bg-color);
@@ -226,6 +230,7 @@
         const lightboxQrWrapper = document.getElementById('lightboxQrWrapper');
         
         const API_BASE_URL = 'http://127.0.0.1:8000';
+        let isAnyTaskRunning = false;
 
         
         const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -250,19 +255,29 @@
             }
             return new Blob([u8arr], {type:mime});
         }
+
+        function toggleAllRegenerateButtons(enable) {
+            document.querySelectorAll('.regenerate-button').forEach(btn => {
+                btn.disabled = !enable;
+            });
+        }
         
         async function handleRegenerate(event) {
+            if (isAnyTaskRunning) {
+                showStatus('Harap tunggu proses sebelumnya selesai.', true);
+                return;
+            }
+            isAnyTaskRunning = true;
+            toggleAllRegenerateButtons(false);
+
             const button = event.currentTarget;
             const cardElement = button.closest('.result-card');
             const imageContainer = cardElement.querySelector('.image-container');
-            const qrContainer = cardElement.querySelector('.qr-container');
-            const qrInfo = qrContainer.querySelector('.qr-info');
 
             const templateName = button.dataset.templateName;
             const originalImageDataUrl = button.dataset.originalImageDataUrl;
             const ticketCode = sessionStorage.getItem('ticketCode');
 
-            button.disabled = true;
             button.textContent = '...';
             imageContainer.innerHTML = `
                 <div class="loading-spinner"></div>
@@ -294,10 +309,8 @@
                 resultImg.classList.add('result-image');
                 newImageContainer.appendChild(resultImg);
                 
-                // Re-add the regenerate button to the new container
                 const newRegenerateButton = button.cloneNode(true);
                 newRegenerateButton.textContent = 'Regenerate';
-                newRegenerateButton.disabled = false;
                 newRegenerateButton.addEventListener('click', handleRegenerate);
                 newImageContainer.appendChild(newRegenerateButton);
 
@@ -330,21 +343,20 @@
                 showStatus(error.message, true);
                 imageContainer.innerHTML = `<p style="padding: 1rem; color: #D73737; font-weight: 600;">Regeneration Failed</p>`;
             } finally {
-                // The original button is gone, so no need to re-enable it.
+                isAnyTaskRunning = false;
+                toggleAllRegenerateButtons(true);
             }
         }
 
         async function processSelection(selection, cardElement, ticketCode) {
             const { imageDataUrl, templateName } = selection;
             const imageContainer = cardElement.querySelector('.image-container');
-            const qrContainer = cardElement.querySelector('.qr-container');
             
             const formattedName = templateName.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
             imageContainer.innerHTML = `
                 <div class="loading-spinner"></div>
                 <p class="loading-text" style="position: absolute; bottom: 20px; color: #555; font-weight: 600;">Processing ${formattedName}...</p>
             `;
-            qrContainer.innerHTML = '<p>Generating QR Code...</p>';
 
             const imageBlob = dataURLtoBlob(imageDataUrl);
             const formData = new FormData();
@@ -379,7 +391,6 @@
                     openLightbox(resultImgSrc, qrImgSrc);
                 });
                 
-                qrContainer.innerHTML = '';
 
                 const qrInfo = document.createElement('div');
                 qrInfo.className = 'qr-info';
@@ -397,7 +408,7 @@
                 }
 
                 const regenerateButton = document.createElement('button');
-                regenerateButton.className = 'regenerate-button';
+                regenerateButton.className = 'regenerate-button hidden';
                 regenerateButton.textContent = 'Regenerate';
                 regenerateButton.dataset.templateName = templateName;
                 regenerateButton.dataset.originalImageDataUrl = imageDataUrl; 
@@ -405,7 +416,6 @@
                 regenerateButton.addEventListener('click', handleRegenerate);
 
                 imageContainer.appendChild(regenerateButton);
-                qrContainer.appendChild(qrInfo);
 
             } catch (error) {
                 console.error(`Error generating image for ${templateName}:`, error);
@@ -415,6 +425,7 @@
         }
 
         async function generateImages() {
+            isAnyTaskRunning = true;
             finishedButton.disabled = true;
             const selectionsStr = sessionStorage.getItem('photoTemplateSelections');
             const ticketCode = sessionStorage.getItem('ticketCode');
@@ -458,7 +469,12 @@
                 showStatus("Error: Data pilihan template tidak valid.", true);
                 setTimeout(() => window.location.href = 'user_templates.html', 3000);
             } finally {
+                isAnyTaskRunning = false;
                 finishedButton.disabled = false;
+                // Show all regenerate buttons now that initial generation is complete
+                document.querySelectorAll('.regenerate-button').forEach(btn => {
+                    btn.classList.remove('hidden');
+                });
             }
         }
 
