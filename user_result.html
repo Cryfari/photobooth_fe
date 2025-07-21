@@ -22,53 +22,88 @@
         *, *::before, *::after { box-sizing: border-box; }
         html, body { height: 100%; margin: 0; padding: 0; font-family: var(--font-family); background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; }
 
-      
-        .result-container {
-            flex-grow: 1; display: flex; justify-content: center; align-items: flex-start;
-            padding: 40px; overflow-y: auto;
+        .main-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
+      
+        /* --- BARU: Kontainer untuk QR Code Publik --- */
+        .public-qr-section {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto 40px auto;
+            background-color: var(--frame-bg-color);
+            color: #333;
+            padding: 25px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .public-qr-section h2 {
+            margin: 0 0 15px 0;
+            font-size: 1.2rem;
+            color: var(--bg-color);
+        }
+        .qr-code-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        #publicQrImage {
+            width: 100%;
+            max-width: 250px;
+            height: auto;
+            border-radius: 16px;
+            border: 2px solid #eee;
+        }
+        #publicFolderLink {
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: var(--bg-color);
+            background: transparent;
+            border: 2px solid var(--bg-color);
+            border-radius: 20px;
+            padding: 8px 20px;
+            text-decoration: none;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        #publicFolderLink:hover {
+            background-color: var(--bg-color);
+            color: white;
+        }
+
         .result-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 40px; width: 100%; max-width: 1400px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 40px;
+            width: 100%;
+            max-width: 1400px;
         }
         .result-card {
-            background-color: var(--frame-bg-color); border-radius: 20px;
-            overflow: hidden; display: flex; flex-direction: column;
+            background-color: var(--frame-bg-color);
+            border-radius: 20px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
             aspect-ratio: 3 / 4;
         }
         .result-card .image-container {
-            flex-grow: 1; display: flex; justify-content: center; align-items: center;
-            position: relative; background-color: #e0e0e0;
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            background-color: #e0e0e0;
             cursor: pointer;
         }
         .result-card img.result-image { width: 100%; height: 100%; object-fit: cover; }
-        .result-card .qr-container {
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center; /* Center content when regenerate button is not present */
-            padding: 10px 20px;
-            background-color: #f0f2f5;
-            min-height: 80px;
-        }
-        .qr-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex: 1; 
-            min-width: 0; 
-        }
-        .result-card .qr-container img {
-            width: 60px;
-            height: 60px;
-            border-radius: 8px;
-        }
-        .result-card .qr-container p {
-            color: #555;
-            font-size: 0.7rem;
-            font-weight: 600;
-            margin: 0;
-        }
+        
         .regenerate-button {
             position: absolute;
             top: 20px;
@@ -101,7 +136,6 @@
             background-color: #888;
             border-color: #888;
         }
-
         
         .page-footer {
             flex-shrink: 0; display: flex; justify-content: center;
@@ -116,7 +150,6 @@
         #finishedButton:hover:not(:disabled) { background-color: rgba(255, 255, 255, 0.1); }
         #finishedButton:disabled { opacity: 0.5; cursor: not-allowed; }
         
-       
         .loading-spinner {
             border-radius: 50%; width: 50px; height: 50px;
             border: 5px solid rgba(0, 0, 0, 0.2);
@@ -125,7 +158,6 @@
         }
         .loading-text { color: #333; margin-top: 15px; font-size: 1.2rem; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
         
         .lightbox-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -184,7 +216,6 @@
             font-size: 1rem;
             margin: 0;
         }
-
         
         #statusMessage {
             position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
@@ -198,13 +229,22 @@
 </head>
 <body>
 
-    <div class="result-container">
-        <div id="resultGrid" class="result-grid"></div>
-    </div>
+    <main class="main-container">
+        <!-- Kontainer untuk QR Code Publik -->
+        <section id="publicQrSection" class="public-qr-section" style="display: none;">
+            <h2>Scan to Download All Photos</h2>
+            <div class="qr-code-wrapper">
+                <img id="publicQrImage" src="" alt="QR Code for Google Drive Folder">
+                <a id="publicFolderLink" href="#" target="_blank" rel="noopener noreferrer">Open Folder Link</a>
+            </div>
+        </section>
 
-    <div class="page-footer">
+        <div id="resultGrid" class="result-grid"></div>
+    </main>
+
+    <footer class="page-footer">
         <button id="finishedButton" disabled>SELESAI</button>
-    </div>
+    </footer>
     
     <div id="statusMessage"></div>
 
@@ -231,6 +271,7 @@
         
         const API_BASE_URL = 'http://127.0.0.1:8000';
         let isAnyTaskRunning = false;
+        let publicFolderQrSrc = null; // Variabel untuk menyimpan QR code folder publik
 
         
         const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -273,7 +314,8 @@
             const button = event.currentTarget;
             const cardElement = button.closest('.result-card');
             const imageContainer = cardElement.querySelector('.image-container');
-
+            
+            const lastSuccessfulImageSrc = imageContainer.querySelector('.result-image')?.src;
             const templateName = button.dataset.templateName;
             const originalImageDataUrl = button.dataset.originalImageDataUrl;
             const ticketCode = sessionStorage.getItem('ticketCode');
@@ -294,54 +336,52 @@
                     headers: { 'X-Ticket-Token': ticketCode },
                     body: formData
                 });
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.detail || `Regenerasi gagal (Status: ${response.status})`);
+                }
+
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.detail || 'Gagal meregenerasi gambar.');
-
                 const resultImgSrc = `data:image/png;base64,${data.generated_image_base64}`;
-                const qrImgSrc = (data.google_drive_upload && data.google_drive_upload.qr_code_base64) 
-                    ? `data:image/png;base64,${data.google_drive_upload.qr_code_base64}` 
-                    : null;
-
-                const newImageContainer = imageContainer.cloneNode(false);
+                
+                imageContainer.innerHTML = '';
                 const resultImg = document.createElement('img');
                 resultImg.src = resultImgSrc;
                 resultImg.alt = `Hasil AI untuk template ${templateName}`;
                 resultImg.classList.add('result-image');
-                newImageContainer.appendChild(resultImg);
+                imageContainer.appendChild(resultImg);
                 
                 const newRegenerateButton = button.cloneNode(true);
                 newRegenerateButton.textContent = 'Regenerate';
                 newRegenerateButton.addEventListener('click', handleRegenerate);
-                newImageContainer.appendChild(newRegenerateButton);
-
-                imageContainer.parentNode.replaceChild(newImageContainer, imageContainer);
+                imageContainer.appendChild(newRegenerateButton);
                 
-                newImageContainer.addEventListener('click', (event) => {
-                    if (event.target.classList.contains('regenerate-button')) {
-                        return;
-                    }
-                    openLightbox(resultImgSrc, qrImgSrc);
+                imageContainer.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('regenerate-button')) return;
+                    openLightbox(resultImgSrc, publicFolderQrSrc);
                 });
-                
-                if (qrInfo) {
-                    if (qrImgSrc) {
-                        qrInfo.innerHTML = '';
-                        const qrImg = document.createElement('img');
-                        qrImg.src = qrImgSrc;
-                        qrImg.alt = 'Kode QR untuk mengunduh';
-                        const qrText = document.createElement('p');
-                        qrText.textContent = 'Scan to Download';
-                        qrInfo.appendChild(qrImg);
-                        qrInfo.appendChild(qrText);
-                    } else {
-                        qrInfo.innerHTML = '<p>QR Code tidak tersedia.</p>';
-                    }
-                }
 
             } catch (error) {
                 console.error(`Error regenerating image for ${templateName}:`, error);
                 showStatus(error.message, true);
-                imageContainer.innerHTML = `<p style="padding: 1rem; color: #D73737; font-weight: 600;">Regeneration Failed</p>`;
+                
+                if (lastSuccessfulImageSrc) {
+                    imageContainer.innerHTML = '';
+                    const resultImg = document.createElement('img');
+                    resultImg.src = lastSuccessfulImageSrc;
+                    resultImg.alt = `Hasil AI untuk template ${templateName}`;
+                    resultImg.classList.add('result-image');
+                    
+                    const newRegenerateButton = button.cloneNode(true);
+                    newRegenerateButton.textContent = 'Regenerate';
+                    newRegenerateButton.addEventListener('click', handleRegenerate);
+
+                    imageContainer.appendChild(resultImg);
+                    imageContainer.appendChild(newRegenerateButton);
+                } else {
+                    imageContainer.innerHTML = `<p style="padding: 1rem; color: #D73737; font-weight: 600;">Regeneration Failed</p>`;
+                }
             } finally {
                 isAnyTaskRunning = false;
                 toggleAllRegenerateButtons(true);
@@ -373,10 +413,7 @@
                 if (!response.ok) throw new Error(data.detail || `Gagal memproses gambar.`);
 
                 const resultImgSrc = `data:image/png;base64,${data.generated_image_base64}`;
-                const qrImgSrc = (data.google_drive_upload && data.google_drive_upload.qr_code_base64) 
-                    ? `data:image/png;base64,${data.google_drive_upload.qr_code_base64}` 
-                    : null;
-
+                
                 imageContainer.innerHTML = '';
                 const resultImg = document.createElement('img');
                 resultImg.src = resultImgSrc;
@@ -388,25 +425,9 @@
                     if (event.target.classList.contains('regenerate-button')) {
                         return;
                     }
-                    openLightbox(resultImgSrc, qrImgSrc);
+                    openLightbox(resultImgSrc, publicFolderQrSrc);
                 });
                 
-
-                const qrInfo = document.createElement('div');
-                qrInfo.className = 'qr-info';
-
-                if (qrImgSrc) {
-                    const qrImg = document.createElement('img');
-                    qrImg.src = qrImgSrc;
-                    qrImg.alt = 'Kode QR untuk mengunduh';
-                    const qrText = document.createElement('p');
-                    qrText.textContent = 'Scan to Download';
-                    qrInfo.appendChild(qrImg);
-                    qrInfo.appendChild(qrText);
-                } else {
-                    qrInfo.innerHTML = '<p>QR Code tidak tersedia.</p>';
-                }
-
                 const regenerateButton = document.createElement('button');
                 regenerateButton.className = 'regenerate-button hidden';
                 regenerateButton.textContent = 'Regenerate';
@@ -437,20 +458,50 @@
             }
 
             try {
+                // Langkah 1: Buat folder publik dan dapatkan QR code-nya
+                showStatus('Menyiapkan folder unduhan...');
+                const folderResponse = await fetch(`${API_BASE_URL}/google-drive/create-public-folder/${ticketCode}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (!folderResponse.ok) {
+                    const errorData = await folderResponse.json().catch(() => ({}));
+                    throw new Error(errorData.detail || 'Gagal membuat folder publik.');
+                }
+                const folderData = await folderResponse.json();
+                publicFolderQrSrc = `data:image/png;base64,${folderData.qr_code_base64}`;
+
+                // Tampilkan QR Code publik di atas galeri
+                const publicQrSection = document.getElementById('publicQrSection');
+                const publicQrImage = document.getElementById('publicQrImage');
+                const publicFolderLink = document.getElementById('publicFolderLink');
+                publicQrImage.src = publicFolderQrSrc;
+                publicFolderLink.href = folderData.folder_link;
+                publicQrSection.style.display = 'block';
+
+            } catch (e) {
+                showStatus(e.message, true);
+                isAnyTaskRunning = false;
+                finishedButton.disabled = false;
+                return; // Hentikan proses jika folder gagal dibuat
+            }
+
+            try {
                 const selections = JSON.parse(selectionsStr);
                 resultGrid.innerHTML = '';
 
                 const cardElements = selections.map(() => {
                     const card = document.createElement('div');
                     card.classList.add('result-card');
-                    card.innerHTML = `
-                        <div class="image-container"><p style="color:#555;">Menunggu giliran...</p></div>
-                        <div class="qr-container"><p>Menunggu gambar...</p></div>
-                    `;
+                    // Kartu sekarang hanya berisi image container
+                    card.innerHTML = `<div class="image-container"><p style="color:#555;">Menunggu giliran...</p></div>`;
                     resultGrid.appendChild(card);
                     return card;
                 });
 
+                // Langkah 2: Proses setiap gambar
                 let index = 0;
                 for (const selection of selections) {
                     showStatus(`Memproses gambar ${index + 1} dari ${selections.length}...`);
@@ -471,7 +522,6 @@
             } finally {
                 isAnyTaskRunning = false;
                 finishedButton.disabled = false;
-                // Show all regenerate buttons now that initial generation is complete
                 document.querySelectorAll('.regenerate-button').forEach(btn => {
                     btn.classList.remove('hidden');
                 });
