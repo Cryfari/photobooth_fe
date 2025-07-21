@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menyusun Hasil Foto - AI Photobooth</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kdam+Thmor+Pro&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #D9773B;
+            --frame-bg-color: #FEFBF5;
+            --text-color: #FFFFFF;
+            --dark-text-color: #333;
+            --loading-spinner-color: #D9773B;
+            --selection-outline-color: #D9773B;
+            --font-family: 'Kdam Thmor Pro', 'Segoe UI', sans-serif;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { height: 100%; margin: 0; padding: 0; font-family: var(--font-family); background-color: var(--bg-color); color: var(--text-color); }
+        .page-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 40px; }
+        .view { width: 100%; max-width: 1200px; text-align: center; animation: fadeIn 0.5s ease-in-out; }
+        .view.hidden { display: none; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        h1 { font-size: clamp(1.8rem, 4vw, 2.5rem); margin-top: 0; margin-bottom: 20px; }
+        .subtitle { font-size: 1.1rem; opacity: 0.9; margin-bottom: 40px; }
+        #loadingView .loading-spinner { border-radius: 50%; width: 60px; height: 60px; border: 6px solid rgba(255, 255, 255, 0.3); border-top-color: var(--text-color); animation: spin 1s linear infinite; margin: 0 auto 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .layouts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 25px; margin-top: 30px; }
+        .layout-item { background-color: var(--frame-bg-color); border-radius: 16px; overflow: hidden; cursor: pointer; border: 4px solid transparent; transition: transform 0.2s ease, border-color 0.2s ease; }
+        .layout-item:hover { transform: scale(1.03); }
+        .layout-item img { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; display: block; background-color: #eee; }
+        .layout-item .name { padding: 15px; font-weight: 600; color: var(--dark-text-color); }
+        #resultView .result-image-wrapper { background-color: var(--frame-bg-color); padding: 15px; border-radius: 20px; max-width: 230px; margin: 0 auto 30px auto; }
+        #resultImage { width: 100%; height: auto; border-radius: 12px; display: block; }
+        .action-button { font-family: inherit; font-size: 1.2rem; font-weight: bold; color: var(--bg-color); background-color: var(--text-color); border: none; border-radius: 40px; cursor: pointer; padding: 15px 40px; transition: transform 0.2s, background-color 0.2s; text-decoration: none; }
+        .action-button:hover { transform: scale(1.05); }
+        #messageBox { margin-top: 20px; padding: 15px; border-radius: 8px; background-color: #ffdddd; color: #D8000C; font-weight: 600; display: none; }
+    </style>
+</head>
+<body>
+    <div class="page-wrapper">
+        <div id="loadingView" class="view">
+            <div class="loading-spinner"></div>
+            <h1 id="loadingText">Mempersiapkan...</h1>
+        </div>
+        <div id="selectionView" class="view hidden">
+            <h1>Pilih Bingkai Favoritmu</h1>
+            <p class="subtitle">Klik salah satu bingkai di bawah untuk menggabungkan hasil fotomu.</p>
+            <div id="layoutsGrid" class="layouts-grid"></div>
+        </div>
+        <div id="resultView" class="view hidden">
+            <h1>Hore, Selesai!</h1>
+            <p class="subtitle">Ini dia hasil akhir fotomu. Jangan lupa untuk mengunduhnya!</p>
+            <div class="result-image-wrapper">
+                <img id="resultImage" src="" alt="Hasil akhir foto yang digabungkan">
+            </div>
+            <a id="finishButton" href="index.html" class="action-button">Selesai & Kembali ke Awal</a>
+        </div>
+        <div id="messageBox"></div>
+    </div>
+
+    <script type="module">
+        import { getAllImages, clearImages } from './js/db.js';
+
+        const API_BASE_URL = 'http://127.0.0.1:8000';
+        const state = {
+            ticketCode: sessionStorage.getItem('ticketCode'),
+            generatedImages: [], // Akan diisi dari IndexedDB
+        };
+
+        const views = {
+            loading: document.getElementById('loadingView'),
+            selection: document.getElementById('selectionView'),
+            result: document.getElementById('resultView'),
+        };
+        const loadingText = document.getElementById('loadingText');
+        const layoutsGrid = document.getElementById('layoutsGrid');
+        const resultImage = document.getElementById('resultImage');
+        const messageBox = document.getElementById('messageBox');
+        
+        function showView(viewName) { Object.keys(views).forEach(key => views[key].classList.toggle('hidden', key !== viewName)); }
+        function showError(message) { showView('loading'); loadingText.textContent = 'Oops! Terjadi Kesalahan'; messageBox.textContent = message; messageBox.style.display = 'block'; }
+
+        async function composeLayout(layoutId) {
+            showView('loading');
+            loadingText.textContent = 'Menggabungkan foto...';
+
+            const formData = new FormData();
+            state.generatedImages.forEach((imageObj, index) => {
+                // imageObj.image adalah Blob yang kita ambil dari IndexedDB
+                formData.append('photos', imageObj.image, `photo_${index}.png`);
+            });
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/public/layouts/${layoutId}/compose`, {
+                    method: 'POST',
+                    headers: { 'X-Ticket-Token': state.ticketCode },
+                    body: formData,
+                });
+
+                const data = await response.json();
+                if (!response.ok) {
+                    const errorMessage = Array.isArray(data.detail) ? data.detail[0].msg : data.detail;
+                    throw new Error(errorMessage || 'Gagal menggabungkan gambar.');
+                }
+
+                resultImage.src = `${API_BASE_URL}${data.image_url}`;
+                showView('result');
+                await clearImages(); // Bersihkan DB setelah berhasil
+
+            } catch (error) {
+                console.error('Composition Error:', error);
+                showError(error.message);
+            }
+        }
+
+        async function fetchAndDisplayLayouts(slotCount) {
+            loadingText.textContent = 'Memuat pilihan bingkai...';
+            try {
+                const response = await fetch(`${API_BASE_URL}/public/layouts/?slots=${slotCount}`, {
+                    headers: { 'X-Ticket-Token': state.ticketCode }
+                });
+                if (!response.ok) throw new Error((await response.json()).detail || 'Gagal memuat layout.');
+                const availableLayouts = await response.json();
+                if (availableLayouts.length === 0) {
+                    showError(`Tidak ada bingkai yang tersedia untuk ${slotCount} foto.`);
+                    return;
+                }
+
+                layoutsGrid.innerHTML = '';
+                availableLayouts.forEach(layout => {
+                    const item = document.createElement('div');
+                    item.className = 'layout-item';
+                    item.innerHTML = `<img src="${API_BASE_URL}/${layout.border_image_path.replace(/\\/g, '/')}" alt="${layout.name}" loading="lazy"><div class="name">${layout.name}</div>`;
+                    item.addEventListener('click', () => composeLayout(layout.id));
+                    layoutsGrid.appendChild(item);
+                });
+                showView('selection');
+            } catch (error) {
+                console.error('Fetch Layouts Error:', error);
+                showError(error.message);
+            }
+        }
+
+        async function initialize() {
+            if (!state.ticketCode) {
+                alert('Sesi tidak valid. Kembali ke halaman awal.');
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            showView('loading');
+            loadingText.textContent = 'Memuat gambar hasil AI...';
+
+            // Ambil data gambar dari IndexedDB
+            state.generatedImages = await getAllImages();
+
+            if (state.generatedImages.length === 0) {
+                alert('Tidak ada gambar AI yang ditemukan. Kembali ke halaman awal.');
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            const photoCount = state.generatedImages.length;
+            loadingText.textContent = 'Mengecek layout default...';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/public/layouts/default`);
+                if (response.ok) {
+                    const defaultLayout = await response.json();
+                    if (defaultLayout.slots.length === photoCount) {
+                        await composeLayout(defaultLayout.id);
+                        return;
+                    }
+                }
+                await fetchAndDisplayLayouts(photoCount);
+            } catch (error) {
+                console.warn('Could not fetch default layout, proceeding to selection.', error);
+                await fetchAndDisplayLayouts(photoCount);
+            }
+        }
+
+        initialize();
+    </script>
+</body>
+</html>
