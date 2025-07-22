@@ -253,10 +253,6 @@
             <div class="lightbox-image-frame">
                 <img id="lightboxImage" src="" alt="Detail Gambar Hasil">
             </div>
-            <div id="lightboxQrWrapper" class="lightbox-qr-frame">
-                <img id="lightboxQr" src="" alt="Kode QR untuk Unduh">
-                <p>Scan to Download</p>
-            </div>
         </div>
     </div>
 
@@ -266,8 +262,6 @@
         const statusMessage = document.getElementById('statusMessage');
         const lightboxOverlay = document.getElementById('lightboxOverlay');
         const lightboxImage = document.getElementById('lightboxImage');
-        const lightboxQr = document.getElementById('lightboxQr');
-        const lightboxQrWrapper = document.getElementById('lightboxQrWrapper');
         
         const API_BASE_URL = 'http://127.0.0.1:8000';
         let isAnyTaskRunning = false;
@@ -530,13 +524,6 @@
 
         function openLightbox(imgSrc, qrSrc) {
             lightboxImage.src = imgSrc;
-            if (qrSrc) {
-                lightboxQr.src = qrSrc;
-                lightboxQrWrapper.style.display = 'flex';
-            } else {
-                lightboxQr.src = '';
-                lightboxQrWrapper.style.display = 'none';
-            }
             lightboxOverlay.classList.add('visible');
         }
 
