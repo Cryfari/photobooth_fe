@@ -7,7 +7,7 @@ let db;
  * Membuka koneksi ke database IndexedDB.
  * @returns {Promise<IDBDatabase>} Promise yang resolve dengan objek database.
  */
-function openDB() {
+export function openDB() {
     return new Promise((resolve, reject) => {
         if (db) {
             return resolve(db);
