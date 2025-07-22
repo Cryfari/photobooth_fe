@@ -34,9 +34,53 @@
         .layout-item .name { padding: 15px; font-weight: 600; color: var(--dark-text-color); }
         #resultView .result-image-wrapper { background-color: var(--frame-bg-color); padding: 15px; border-radius: 20px; max-width: 230px; margin: 0 auto 30px auto; }
         #resultImage { width: 100%; height: auto; border-radius: 12px; display: block; }
-        .action-button { font-family: inherit; font-size: 1.2rem; font-weight: bold; color: var(--bg-color); background-color: var(--text-color); border: none; border-radius: 40px; cursor: pointer; padding: 15px 40px; transition: transform 0.2s, background-color 0.2s; text-decoration: none; }
-        .action-button:hover { transform: scale(1.05); }
-        #messageBox { margin-top: 20px; padding: 15px; border-radius: 8px; background-color: #ffdddd; color: #D8000C; font-weight: 600; display: none; }
+        
+        /* Container untuk tombol aksi */
+        .action-buttons-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .action-button { 
+            font-family: inherit; 
+            font-size: 1.2rem; 
+            font-weight: bold; 
+            border-radius: 40px; 
+            cursor: pointer; 
+            padding: 15px 40px; 
+            transition: transform 0.2s, background-color 0.2s, opacity 0.2s; 
+            text-decoration: none;
+            border: 3px solid transparent;
+        }
+        .action-button.primary {
+            color: var(--bg-color); 
+            background-color: var(--text-color);
+        }
+         .action-button.primary:hover:not(:disabled) { 
+            transform: scale(1.05); 
+        }
+        /* Tombol sekunder (untuk Cetak) */
+        .action-button.secondary {
+            color: var(--text-color);
+            background-color: transparent;
+            border-color: var(--text-color);
+        }
+        .action-button.secondary:hover:not(:disabled) {
+            transform: scale(1.05);
+            background-color: var(--text-color);
+            color: var(--bg-color);
+        }
+        .action-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background-color: #a0a0a0;
+            border-color: #a0a0a0;
+            color: #e0e0e0;
+        }
+
+        #messageBox { margin-top: 20px; padding: 15px; border-radius: 8px; font-weight: 600; display: none; }
     </style>
 </head>
 <body>
@@ -52,11 +96,15 @@
         </div>
         <div id="resultView" class="view hidden">
             <h1>Hore, Selesai!</h1>
-            <p class="subtitle">Ini dia hasil akhir fotomu. Jangan lupa untuk mengunduhnya!</p>
+            <p class="subtitle">Cetak atau unduh hasil fotomu di bawah ini.</p>
             <div class="result-image-wrapper">
                 <img id="resultImage" src="" alt="Hasil akhir foto yang digabungkan">
             </div>
-            <a id="finishButton" href="index.html" class="action-button">Selesai & Kembali ke Awal</a>
+            <!-- Container baru untuk tombol -->
+            <div class="action-buttons-container">
+                <button id="printButton" class="action-button secondary" disabled>Cetak Foto</button>
+                <a id="finishButton" href="index.html" class="action-button primary">Selesai</a>
+            </div>
         </div>
         <div id="messageBox"></div>
     </div>
@@ -68,8 +116,10 @@
         const state = {
             ticketCode: sessionStorage.getItem('ticketCode'),
             generatedImages: [], // Akan diisi dari IndexedDB
+            composedFilename: null, // Untuk menyimpan nama file hasil compose
         };
 
+        // Referensi elemen DOM
         const views = {
             loading: document.getElementById('loadingView'),
             selection: document.getElementById('selectionView'),
@@ -79,17 +129,43 @@
         const layoutsGrid = document.getElementById('layoutsGrid');
         const resultImage = document.getElementById('resultImage');
         const messageBox = document.getElementById('messageBox');
+        const printButton = document.getElementById('printButton');
         
-        function showView(viewName) { Object.keys(views).forEach(key => views[key].classList.toggle('hidden', key !== viewName)); }
-        function showError(message) { showView('loading'); loadingText.textContent = 'Oops! Terjadi Kesalahan'; messageBox.textContent = message; messageBox.style.display = 'block'; }
+        // Fungsi untuk menampilkan view tertentu
+        function showView(viewName) { 
+            Object.keys(views).forEach(key => views[key].classList.toggle('hidden', key !== viewName)); 
+        }
 
+        // Fungsi untuk menampilkan pesan error
+        function showError(message) { 
+            showView('loading'); 
+            loadingText.textContent = 'Oops! Terjadi Kesalahan'; 
+            messageBox.textContent = message; 
+            messageBox.style.backgroundColor = '#ffdddd';
+            messageBox.style.color = '#D8000C';
+            messageBox.style.display = 'block'; 
+        }
+        
+        // Fungsi untuk menampilkan pesan sukses
+        function showSuccess(message) {
+            messageBox.textContent = message;
+            messageBox.style.backgroundColor = '#d4edda';
+            messageBox.style.color = '#155724';
+            messageBox.style.display = 'block';
+            setTimeout(() => { messageBox.style.display = 'none'; }, 4000);
+        }
+
+        /**
+         * Mengirim request ke backend untuk menggabungkan foto dengan layout yang dipilih.
+         * @param {number} layoutId - ID dari layout yang dipilih.
+         */
         async function composeLayout(layoutId) {
             showView('loading');
             loadingText.textContent = 'Menggabungkan foto...';
 
             const formData = new FormData();
             state.generatedImages.forEach((imageObj, index) => {
-                // imageObj.image adalah Blob yang kita ambil dari IndexedDB
+                // imageObj.image adalah Blob yang diambil dari IndexedDB
                 formData.append('photos', imageObj.image, `photo_${index}.png`);
             });
 
@@ -106,9 +182,13 @@
                     throw new Error(errorMessage || 'Gagal menggabungkan gambar.');
                 }
 
+                // Tampilkan gambar hasil dan simpan nama filenya
                 resultImage.src = `${API_BASE_URL}${data.image_url}`;
+                state.composedFilename = data.filename; // Simpan nama file untuk dicetak
+                printButton.disabled = false; // Aktifkan tombol cetak
+
                 showView('result');
-                await clearImages(); // Bersihkan DB setelah berhasil
+                await clearImages(); // Bersihkan IndexedDB setelah berhasil
 
             } catch (error) {
                 console.error('Composition Error:', error);
@@ -116,6 +196,10 @@
             }
         }
 
+        /**
+         * Mengambil daftar layout yang tersedia dari API dan menampilkannya.
+         * @param {number} slotCount - Jumlah foto yang akan dimasukkan ke layout.
+         */
         async function fetchAndDisplayLayouts(slotCount) {
             loadingText.textContent = 'Memuat pilihan bingkai...';
             try {
@@ -123,6 +207,7 @@
                     headers: { 'X-Ticket-Token': state.ticketCode }
                 });
                 if (!response.ok) throw new Error((await response.json()).detail || 'Gagal memuat layout.');
+                
                 const availableLayouts = await response.json();
                 if (availableLayouts.length === 0) {
                     showError(`Tidak ada bingkai yang tersedia untuk ${slotCount} foto.`);
@@ -144,6 +229,9 @@
             }
         }
 
+        /**
+         * Fungsi inisialisasi utama yang dijalankan saat halaman dimuat.
+         */
         async function initialize() {
             if (!state.ticketCode) {
                 alert('Sesi tidak valid. Kembali ke halaman awal.');
@@ -167,6 +255,7 @@
             loadingText.textContent = 'Mengecek layout default...';
 
             try {
+                // Coba gunakan layout default jika ada dan cocok
                 const response = await fetch(`${API_BASE_URL}/public/layouts/default`);
                 if (response.ok) {
                     const defaultLayout = await response.json();
@@ -175,6 +264,7 @@
                         return;
                     }
                 }
+                // Jika tidak ada layout default atau tidak cocok, tampilkan pilihan
                 await fetchAndDisplayLayouts(photoCount);
             } catch (error) {
                 console.warn('Could not fetch default layout, proceeding to selection.', error);
@@ -182,6 +272,43 @@
             }
         }
 
+        // Event listener untuk tombol cetak
+        printButton.addEventListener('click', async () => {
+            if (!state.composedFilename || printButton.disabled) return;
+
+            printButton.disabled = true;
+            printButton.textContent = 'Mencetak...';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/print`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Ticket-Token': state.ticketCode,
+                    },
+                    body: `filename=${encodeURIComponent(state.composedFilename)}`
+                });
+
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Gagal mengirim perintah cetak.');
+                }
+                
+                showSuccess('Perintah cetak berhasil dikirim ke printer!');
+
+            } catch (error) {
+                console.error('Print Error:', error);
+                showError(error.message);
+            } finally {
+                // Aktifkan kembali tombol setelah beberapa saat
+                setTimeout(() => {
+                    printButton.disabled = false;
+                    printButton.textContent = 'Cetak Foto';
+                }, 3000);
+            }
+        });
+
+        // Jalankan inisialisasi
         initialize();
     </script>
 </body>
