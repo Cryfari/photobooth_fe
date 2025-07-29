@@ -137,6 +137,19 @@
             display: block;
             transition: filter 0.2s ease;
         }
+        .template-item.no-template-item {
+            background-color: rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            border: 2px dashed var(--button-border-color);
+        }
+        .template-item.no-template-item svg {
+            width: 40px;
+            height: 40px;
+            opacity: 0.7;
+        }
         .template-item .checkmark {
             position: absolute;
             top: 12px;
@@ -277,11 +290,9 @@
 
         function setActivePhoto(index) {
             activePhotoIndex = index;
-            // Update UI for photo panel
             document.querySelectorAll('.captured-photo-item').forEach((item, i) => {
                 item.classList.toggle('active', i === index);
             });
-            // Update UI for template grid
             updateTemplateGridSelection();
         }
         
@@ -320,15 +331,19 @@
                         
                         const assignedName = document.createElement('div');
                         assignedName.classList.add('assigned-template-name');
-                        assignedName.style.display = 'none';
-
+                        
                         item.appendChild(img);
                         item.appendChild(assignedName);
                         
                         item.addEventListener('click', () => setActivePhoto(index));
                         capturedPhotosPanel.appendChild(item);
+
+                        photoTemplateMap.set(index, 'no_template');
+                        assignedName.textContent = 'Tanpa Template';
+                        assignedName.style.display = 'block';
                     });
-                    setActivePhoto(0); // Set the first photo as active by default
+                    setActivePhoto(0);
+                    checkCompletion();
                 } else {
                      capturedPhotosPanel.innerHTML = '<p>Tidak ada foto yang ditemukan.</p>';
                 }
@@ -344,6 +359,17 @@
                 if (!response.ok) throw new Error(`Gagal mengambil template: ${response.statusText}`);
                 const data = await response.json();
                 templatesGrid.innerHTML = ''; 
+
+                const noTemplateItem = document.createElement('div');
+                noTemplateItem.className = 'template-item no-template-item';
+                noTemplateItem.dataset.templateName = 'no_template';
+                noTemplateItem.innerHTML = `
+                    <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
+                    <div class="name-overlay"><p>Tanpa Template</p></div>
+                    <div class="checkmark"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+                `;
+                templatesGrid.appendChild(noTemplateItem);
+
 
                 if (data.images && data.images.length > 0) {
                     data.images.forEach(template => {
@@ -372,9 +398,10 @@
                         
                         templatesGrid.appendChild(item);
                     });
-                } else {
-                    templatesGrid.innerHTML = '<p>Tidak ada template yang tersedia.</p>';
                 }
+                
+                updateTemplateGridSelection();
+
             } catch (error) {
                 console.error('Error loading templates:', error);
                 templatesGrid.innerHTML = `<p>Error memuat template: ${error.message}</p>`;
@@ -386,21 +413,20 @@
             if (clickedItem) {
                 const templateName = clickedItem.dataset.templateName;
                 
-                // Assign template to the active photo
                 photoTemplateMap.set(activePhotoIndex, templateName);
                 
-                // Update the UI for the active photo
                 const activePhotoItem = document.querySelector(`.captured-photo-item[data-index='${activePhotoIndex}']`);
                 if (activePhotoItem) {
                     const nameDisplay = activePhotoItem.querySelector('.assigned-template-name');
-                    nameDisplay.textContent = templateName.replace(/_/g, ' ');
+                    if (templateName === 'no_template') {
+                        nameDisplay.textContent = 'Tanpa Template';
+                    } else {
+                        nameDisplay.textContent = templateName.replace(/_/g, ' ');
+                    }
                     nameDisplay.style.display = 'block';
                 }
                 
-                // Update the template grid selection display
                 updateTemplateGridSelection();
-                
-                // Check if all photos have templates
                 checkCompletion();
             }
         });
@@ -409,24 +435,27 @@
             window.location.href = 'user_take_photo.html';
         });
 
+        // [DIPERBAIKI] Logika tombol "Lanjutkan" untuk menangani alur campuran
         continueButton.addEventListener('click', () => {
-            if (!continueButton.disabled) {
-                const selections = Array.from(photoTemplateMap.entries()).map(([photoIndex, templateName]) => {
-                    return {
-                        imageDataUrl: capturedImages[photoIndex],
-                        templateName: templateName
-                    };
-                });
-                
-                sessionStorage.setItem('photoTemplateSelections', JSON.stringify(selections));
-                // Clear old items to avoid confusion on the next page
-                sessionStorage.removeItem('capturedImage');
-                sessionStorage.removeItem('selectedTemplateNames');
-                
-                window.location.href = 'user_result.html';
-            } else {
+            if (continueButton.disabled) {
                 messageEl.textContent = "Silakan pilih template untuk setiap foto.";
+                return;
             }
+
+            // Kumpulkan semua pilihan, termasuk "no_template"
+            const selections = Array.from(photoTemplateMap.entries()).map(([photoIndex, templateName]) => {
+                return {
+                    imageDataUrl: capturedImages[photoIndex],
+                    templateName: templateName
+                };
+            });
+            
+            // Simpan semua pilihan ke sessionStorage untuk digunakan oleh halaman berikutnya
+            sessionStorage.setItem('photoTemplateSelections', JSON.stringify(selections));
+            sessionStorage.removeItem('capturedImages');
+            
+            // Selalu arahkan ke user_result.html, yang akan menangani logika selanjutnya
+            window.location.href = 'user_result.html';
         });
 
         // Initial load

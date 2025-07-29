@@ -7,7 +7,7 @@ let db;
  * Membuka koneksi ke database IndexedDB.
  * @returns {Promise<IDBDatabase>} Promise yang resolve dengan objek database.
  */
-export function openDB() {
+function openDB() {
     return new Promise((resolve, reject) => {
         if (db) {
             return resolve(db);
@@ -29,7 +29,10 @@ export function openDB() {
         request.onupgradeneeded = (event) => {
             const db = event.target.result;
             // Buat object store (seperti tabel di SQL) untuk menyimpan gambar
-            db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+            // Pastikan 'id' adalah keyPath dan autoIncrement
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+            }
         };
     });
 }
@@ -53,6 +56,28 @@ export async function saveImage(imageBlob) {
         request.onerror = (event) => reject("Error saving image: " + event.target.error);
     });
 }
+
+/**
+ * [BARU] Memperbarui gambar yang ada di IndexedDB berdasarkan ID-nya.
+ * @param {number} id - ID dari gambar yang akan diperbarui.
+ * @param {Blob} imageBlob - Blob dari gambar baru.
+ * @returns {Promise<number>} Promise yang resolve dengan ID dari item yang diperbarui.
+ */
+export async function updateImage(id, imageBlob) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(STORE_NAME);
+        
+        // Gunakan .put() untuk memperbarui record yang ada.
+        // .put() akan menimpa record jika key (id) sudah ada.
+        const request = store.put({ id: id, image: imageBlob, timestamp: new Date() });
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = (event) => reject("Error updating image: " + event.target.error);
+    });
+}
+
 
 /**
  * Mengambil semua gambar dari IndexedDB.

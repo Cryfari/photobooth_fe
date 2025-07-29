@@ -3,288 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analisis Kode AI Photobooth</title>
+    <title>Demo Filter Foto</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg-color: #f8f9fa;
-            --header-bg: #343a40;
-            --text-color: #212529;
-            --border-color: #dee2e6;
-            --code-bg: #e9ecef;
-            --success: #28a745;
-            --warning: #ffc107;
-            --info: #17a2b8;
-        }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 0;
-            background-color: var(--bg-color);
-            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
         }
-        header {
-            background-color: var(--header-bg);
+        .filter-thumbnail {
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            position: relative;
+            overflow: hidden;
+        }
+        .filter-thumbnail:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .filter-thumbnail.active {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+        }
+        .filter-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(0, 0, 0, 0.5);
             color: white;
-            padding: 2rem;
+            padding: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
             text-align: center;
+            transition: background-color 0.2s;
         }
-        header h1 { margin: 0; font-size: 2.5rem; }
-        main {
-            padding: 2rem;
-            max-width: 900px;
-            margin: 0 auto;
+        .filter-thumbnail:hover .filter-label {
+            background-color: rgba(0, 0, 0, 0.7);
         }
-        section {
-            background-color: white;
-            border: 1px solid var(--border-color);
+        #mainImage {
+            transition: filter 0.3s ease-in-out;
+            max-height: 60vh;
+        }
+        .upload-btn {
+            background-color: #3b82f6;
+            color: white;
+            padding: 10px 20px;
             border-radius: 8px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
         }
-        h2 {
-            border-bottom: 2px solid var(--primary-orange);
-            padding-bottom: 0.5rem;
-            color: var(--header-bg);
-            font-size: 1.8rem;
-        }
-        h3 {
-            color: #495057;
-            font-size: 1.4rem;
-        }
-        code {
-            background-color: var(--code-bg);
-            padding: 0.2em 0.4em;
-            border-radius: 3px;
-            font-family: 'Courier New', Courier, monospace;
-        }
-        pre {
-            background-color: var(--code-bg);
-            padding: 1rem;
-            border-radius: 5px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-        .rekomendasi {
-            border-left: 5px solid var(--info);
-            padding-left: 1rem;
-            margin-top: 1rem;
-            background-color: #f1f8ff;
-        }
-        .poin-plus {
-            color: var(--success);
-            font-weight: bold;
-        }
-         .area-perbaikan {
-            color: var(--warning);
-            font-weight: bold;
+        .upload-btn:hover {
+            background-color: #2563eb;
         }
     </style>
 </head>
-<body>
+<body class="flex items-center justify-center min-h-screen p-4">
 
-    <header>
-        <h1>Analisis Kode: AI Photobooth</h1>
-    </header>
+    <div class="w-full max-w-4xl bg-white rounded-xl shadow-2xl p-6 md:p-8">
+        <div class="text-center mb-6">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800">Coba Filter Foto</h1>
+            <p class="text-gray-500 mt-2">Unggah gambar Anda dan pilih filter di bawah ini.</p>
+        </div>
 
-    <main>
-        <section>
-            <h2>Gambaran Umum & Arsitektur Proyek</h2>
-            <p>
-                Struktur proyek Anda sudah cukup baik dengan memisahkan halaman untuk admin dan pengguna. Ini adalah fondasi yang kuat untuk skalabilitas. Penggunaan file `js/admin_sidebar.js` yang di-re-use di beberapa halaman admin adalah contoh praktik yang baik untuk menghindari duplikasi kode (prinsip DRY - Don't Repeat Yourself).
-            </p>
-            <p><span class="poin-plus">👍 Baik:</span> Pemisahan logis antara alur pengguna dan alur admin.</p>
-            <p><span class="poin-plus">👍 Baik:</span> Penggunaan file JavaScript terpusat untuk komponen yang berulang seperti sidebar admin.</p>
-        </section>
+        <!-- Image Display -->
+        <div class="mb-6 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
+            <img id="mainImage" src="https://placehold.co/800x600/a3e635/3f3f46?text=Gambar+Anda" alt="Gambar Utama" class="w-full h-auto object-contain rounded-lg">
+        </div>
 
-        <section>
-            <h2>Analisis HTML</h2>
-            <h3>Struktur & Semantik</h3>
-            <p>
-                Secara umum, struktur HTML Anda sudah fungsional. Namun, ada beberapa area di mana kita bisa meningkatkannya agar lebih semantik dan mudah diakses.
-            </p>
-            <p>
-                <span class="poin-plus">👍 Baik:</span> Penggunaan `<!DOCTYPE html>`, `<meta charset="UTF-8">`, dan `<meta name="viewport">` sudah tepat dan menjadi standar penting.
-            </p>
-            <div class="rekomendasi">
-                <h4>Rekomendasi Peningkatan Semantik:</h4>
-                <p>
-                    Gunakan elemen semantik HTML5 seperti `<strong><main></strong>`, `<strong><header></strong>`, dan `<strong><footer></strong>` untuk mendefinisikan area utama pada halaman Anda. Sebagai contoh, pada file `user_result.html`, seluruh konten utama bisa dibungkus dalam tag `<main>`. Ini membantu teknologi pendukung (seperti screen reader) dan mesin pencari untuk memahami struktur halaman Anda.
-                </p>
-                <pre><code>
-&lt;!-- Sebelum (user_result.html) --&gt;
-&lt;body&gt;
-    &lt;div class="result-container"&gt;...&lt;/div&gt;
-    &lt;div class="page-footer"&gt;...&lt;/div&gt;
-&lt;/body&gt;
+        <!-- Controls -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+             <label for="imageUpload" class="upload-btn font-semibold">
+                Unggah Gambar
+                <input type="file" id="imageUpload" class="hidden" accept="image/*">
+            </label>
+            <button id="resetButton" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                Reset Filter
+            </button>
+        </div>
 
-&lt;!-- Sesudah (Rekomendasi) --&gt;
-&lt;body&gt;
-    &lt;main class="result-container"&gt;
-        &lt;div id="resultGrid" class="result-grid"&gt;&lt;/div&gt;
-    &lt;/main&gt;
-    &lt;footer class="page-footer"&gt;
-        &lt;button id="finishedButton" disabled&gt;SELESAI&lt;/button&gt;
-    &lt;/footer&gt;
-&lt;/body&gt;
-                </code></pre>
-            </div>
-             <h3>Aksesibilitas (A11y)</h3>
-            <p>
-                Aksesibilitas adalah kunci untuk memastikan semua pengguna, termasuk mereka yang memiliki keterbatasan, dapat menggunakan aplikasi Anda.
-            </p>
-            <div class="rekomendasi">
-                 <h4>Rekomendasi Peningkatan Aksesibilitas:</h4>
-                 <p>
-                    <strong>Label untuk Form:</strong> Pastikan setiap elemen input dalam form memiliki `<strong><label></strong>` yang terhubung. Pada `admin_login.html`, ini sudah baik, namun pada `user_validate_ticket.html` input kode tiket belum memiliki label.
-                </p>
-                <p>
-                    <strong>Teks Alternatif (Alt Text):</strong> Anda sudah menggunakan `alt` pada beberapa gambar, itu bagus! Pastikan semua gambar yang membawa informasi memiliki deskripsi `alt` yang jelas. Untuk gambar dekoratif, gunakan `alt=""`.
-                </p>
-                 <p>
-                    <strong>Peran Tombol:</strong> Pada file `user_take_photo.html`, tombol shutter menggunakan SVG. Tambahkan atribut `<strong>aria-label</strong>` untuk memberikan konteks kepada pengguna screen reader.
-                </p>
-                <pre><code>
-&lt;!-- user_take_photo.html --&gt;
-&lt;button id="shutterButton" class="control-button" <strong>aria-label="Ambil Foto"</strong>&gt;
-    &lt;svg ...&gt;&lt;/svg&gt;
-&lt;/button&gt;
-                </code></pre>
-            </div>
-        </section>
+        <!-- Filter Thumbnails -->
+        <div id="filterContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4">
+            <!-- Filter thumbnails will be generated by JavaScript -->
+        </div>
+    </div>
 
-        <section>
-            <h2>Analisis CSS</h2>
-             <h3>Struktur & Metodologi</h3>
-             <p>
-                Anda secara efektif menggunakan CSS Variables (Custom Properties) seperti `<strong>--bg-color</strong>` dan `<strong>--primary-orange</strong>`. Ini adalah praktik modern yang luar biasa untuk maintainability dan theming.
-             </p>
-            <p><span class="poin-plus">👍 Baik:</span> Penggunaan CSS Variables untuk tema yang konsisten.</p>
-            <p><span class="poin-plus">👍 Baik:</span> Penggunaan Flexbox dan Grid untuk layout yang responsif dan kompleks seperti pada `result-grid` dan layout admin.</p>
-            <div class="rekomendasi">
-                <h4>Rekomendasi Penulisan CSS:</h4>
-                <p>
-                    Walaupun CSS Anda berada di dalam tag `<strong><style></strong>` (yang sempurna untuk contoh mandiri), pada proyek yang lebih besar, pertimbangkan untuk memisahkannya ke file `.css` terpisah per-komponen atau per-halaman. Ini akan membuat kode lebih terorganisir.
-                </p>
-                <p>
-                    Untuk menjaga kerapian selector, Anda bisa mulai menerapkan metodologi seperti <strong>BEM (Block, Element, Modifier)</strong>. Contohnya, pada `user_result.html`, `result-card` adalah "Block" dan `image-container` adalah "Element".
-                </p>
-                 <pre><code>
-.result-card { /* Block */ }
-.result-card__image-container { /* Element */ }
-.result-card--loading { /* Modifier */ }
-                </code></pre>
-            </div>
-        </section>
+    <script>
+        // DOM Elements
+        const mainImage = document.getElementById('mainImage');
+        const filterContainer = document.getElementById('filterContainer');
+        const imageUpload = document.getElementById('imageUpload');
+        const resetButton = document.getElementById('resetButton');
 
-        <section>
-            <h2>Analisis JavaScript (Vanilla JS)</h2>
-            <p>
-                Kode JavaScript Anda adalah inti dari fungsionalitas aplikasi ini. Anda telah menggunakan `async/await` dan `fetch` API, yang merupakan pendekatan modern untuk menangani operasi asinkron.
-            </p>
-             <h3>Manipulasi DOM & Event Handling</h3>
-            <p><span class="poin-plus">👍 Baik:</span> Penggunaan `getElementById` dan `document.createElement` sudah efisien.</p>
-            <p><span class="poin-plus">👍 Baik:</span> Penggunaan `async/await` pada fungsi seperti `processSingleImage` dan `generateImages` membuat kode lebih mudah dibaca daripada Promise chaining tradisional.</p>
-            <div class="rekomendasi">
-                <h4>Rekomendasi Event Delegation:</h4>
-                <p>
-                    Pada `admin_dashboard.html` dan `admin_manage_packages.html`, Anda menambahkan event listener pada setiap tombol 'delete' di dalam loop. Untuk daftar item yang dinamis, lebih efisien menggunakan <strong>Event Delegation</strong>. Anda hanya perlu satu event listener pada elemen induk (misalnya `<tbody>`).
-                </p>
-                <pre><code>
-// admin_manage_packages.html (Rekomendasi)
-const tableBody = document.getElementById('packagesTableBody');
+        // Available Filters
+        const filters = [
+            { name: 'Original', style: 'none' },
+            { name: 'Charming', style: 'saturate(1.5) contrast(1.1)' },
+            { name: 'Excited', style: 'sepia(80%) hue-rotate(-20deg) saturate(1.5)' },
+            { name: 'Hefe', style: 'contrast(1.4) sepia(30%)' },
+            { name: 'Nashville', style: 'sepia(40%) contrast(1.2) brightness(1.05)' },
+            { name: 'Lord Kelvin', style: 'sepia(60%) brightness(1.2) contrast(1.1)' },
+            { name: 'Grayscale', style: 'grayscale(100%)' },
+            { name: 'Invert', style: 'invert(100%)' },
+            { name: 'Blurry', style: 'blur(4px)' },
+            { name: 'Vintage', style: 'sepia(65%) contrast(0.9) brightness(1.1)'},
+            { name: 'Sunny', style: 'saturate(2) brightness(1.1)'},
+            { name: 'Cool', style: 'hue-rotate(180deg) contrast(1.1)'},
+            { name: 'Dramatic', style: 'contrast(1.6) brightness(0.8)'},
+            { name: 'Pop', style: 'saturate(1.8) contrast(1.2)'}
+        ];
 
-tableBody.addEventListener('click', (event) => {
-    // Cek apakah yang diklik adalah tombol delete
-    if (event.target.matches('.action-link.delete')) {
-        const button = event.target;
-        const packageId = button.dataset.id;
-        const packageName = button.dataset.name;
+        let currentImageUrl = mainImage.src;
+        let activeThumbnail = null;
+
+        // Function to generate filter thumbnails
+        function generateThumbnails() {
+            filterContainer.innerHTML = ''; // Clear existing thumbnails
+            filters.forEach((filter, index) => {
+                const thumbContainer = document.createElement('div');
+                thumbContainer.className = 'filter-thumbnail border-4 border-transparent rounded-lg';
+                
+                const thumbImage = document.createElement('img');
+                thumbImage.src = currentImageUrl;
+                thumbImage.alt = `Filter ${filter.name}`;
+                thumbImage.style.filter = filter.style;
+                thumbImage.className = 'w-full h-full object-cover rounded-md';
+
+                const thumbLabel = document.createElement('div');
+                thumbLabel.className = 'filter-label';
+                thumbLabel.textContent = filter.name;
+
+                thumbContainer.appendChild(thumbImage);
+                thumbContainer.appendChild(thumbLabel);
+
+                // Add click event to apply filter
+                thumbContainer.addEventListener('click', () => {
+                    applyFilter(filter.style, thumbContainer);
+                });
+
+                filterContainer.appendChild(thumbContainer);
+                
+                // Set the 'Original' filter as active by default
+                if (index === 0) {
+                    activeThumbnail = thumbContainer;
+                    activeThumbnail.classList.add('active');
+                }
+            });
+        }
+
+        // Function to apply filter
+        function applyFilter(filterStyle, thumbElement) {
+            mainImage.style.filter = filterStyle;
+            
+            // Update active state on thumbnails
+            if (activeThumbnail) {
+                activeThumbnail.classList.remove('active');
+            }
+            activeThumbnail = thumbElement;
+            activeThumbnail.classList.add('active');
+        }
+
+        // Event Listener for Image Upload
+        imageUpload.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    currentImageUrl = e.target.result;
+                    mainImage.src = currentImageUrl;
+                    mainImage.style.filter = 'none'; // Reset filter on new image
+                    generateThumbnails(); // Regenerate thumbnails with the new image
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Event Listener for Reset Button
+        resetButton.addEventListener('click', () => {
+            // The first filter is 'Original'
+            applyFilter(filters[0].style, filterContainer.children[0]);
+        });
         
-        // Panggil fungsi handleDeleteClick di sini
-        handleDeleteClick(packageId, packageName);
-    }
-});
-                </code></pre>
-                 <p>
-                    Pola ini mengurangi jumlah event listener secara signifikan, yang berdampak positif pada performa, terutama jika daftar itemnya sangat banyak.
-                </p>
-            </div>
-            <h3>Struktur Kode & State Management</h3>
-            <p>
-                Kode Anda terstruktur dalam fungsi-fungsi yang logis. Untuk skalabilitas lebih lanjut, kita bisa mulai berpikir dalam kerangka "komponen" meskipun tanpa framework.
-            </p>
-             <div class="rekomendasi">
-                 <h4>Rekomendasi Struktur Berbasis Komponen (Pola):</h4>
-                 <p>
-                    Anda dapat menstrukturkan kode Anda ke dalam fungsi-fungsi yang bertanggung jawab untuk membuat dan mengelola bagian-bagian UI tertentu. Contohnya, pada `user_result.html`, Anda bisa membuat fungsi `createResultCard(templateName)` yang mengembalikan elemen DOM kartu hasil yang lengkap.
-                </p>
-                 <pre><code>
-// user_result.html (Rekomendasi Pola Komponen)
-function createResultCardComponent(templateName) {
-    const card = document.createElement('div');
-    card.classList.add('result-card');
-    
-    // Inisialisasi tampilan loading
-    card.innerHTML = `
-        &lt;div class="image-container"&gt;
-            &lt;div class="loading-spinner"&gt;&lt;/div&gt;
-            &lt;p class="loading-text"&gt;Menunggu giliran...&lt;/p&gt;
-        &lt;/div&gt;
-        &lt;div class="qr-container"&gt;
-            &lt;p&gt;Menunggu gambar...&lt;/p&gt;
-        &lt;/div&gt;
-    `;
-    
-    // Kembalikan elemen dan mungkin fungsi untuk update
-    return card;
-}
+        // Initial call to generate thumbnails on page load
+        window.onload = generateThumbnails;
 
-// Kemudian di dalam `generateImages`
-const cardElement = createResultCardComponent(templateName);
-resultGrid.appendChild(cardElement);
-await processSingleImage(templateName, capturedImageDataUrl, cardElement, ticketCode);
-                </code></pre>
-            </div>
-            <h3>Manajemen Konstanta dan Konfigurasi</h3>
-            <p>
-                Anda mendeklarasikan `API_BASE_URL` di setiap file. Ini berisiko jika suatu saat URL tersebut berubah, Anda harus mengubahnya di banyak tempat.
-            </p>
-             <div class="rekomendasi">
-                <h4>Rekomendasi Sentralisasi Konfigurasi:</h4>
-                <p>
-                   Buat satu file JavaScript khusus untuk konfigurasi, misalnya `config.js`, lalu impor konstanta tersebut di file lain yang membutuhkan.
-                </p>
-                <pre><code>
-// config.js
-export const API_BASE_URL = 'http://127.0.0.1:8000';
-export const DEFAULT_TIMER = 3; // Contoh konstanta lain
-
-// Di file lain (misal: user_result.html)
-&lt;script type="module"&gt;
-    import { API_BASE_URL } from './config.js';
-    // ... sisa kode Anda
-&lt;/script&gt;
-                </code></pre>
-                 <p>
-                    <strong>Penting:</strong> Untuk menggunakan `import/export`, tag `<strong><script></strong>` Anda harus memiliki atribut `<strong>type="module"</strong>`.
-                </p>
-            </div>
-        </section>
-
-         <section>
-            <h2>Kesimpulan</h2>
-            <p>
-                Proyek ini adalah contoh yang sangat baik dari apa yang bisa dicapai dengan teknologi web fundamental. Kode Anda bersih, fungsional, dan menunjukkan pemahaman yang kuat tentang JavaScript modern.
-            </p>
-            <p>
-                Dengan beberapa penyesuaian pada struktur HTML, adopsi pola seperti Event Delegation, dan sentralisasi konfigurasi, proyek ini akan menjadi lebih kuat, lebih mudah dirawat, dan lebih performan.
-            </p>
-            <p>
-                Teruslah berkarya dengan pendekatan purist ini. Anda berada di jalur yang tepat untuk menjadi pengembang frontend yang sangat kompeten dengan pemahaman fundamental yang mendalam!
-            </p>
-        </section>
-
-    </main>
+    </script>
 </body>
 </html>

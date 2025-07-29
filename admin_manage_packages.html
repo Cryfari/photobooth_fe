@@ -267,9 +267,7 @@
                             </tr>
                         </thead>
                         <tbody id="packagesTableBody">
-                            <tr>
-                                <td colspan="6" style="text-align: center; padding: 40px;">Loading packages...</td>
-                            </tr>
+                            <!-- Rows will be injected here by JavaScript -->
                         </tbody>
                     </table>
                 </div>
@@ -306,6 +304,16 @@
         document.addEventListener('DOMContentLoaded', () => {
             createSidebar('packages');
             fetchPackages();
+
+            // --- [PERBAIKAN] Menggunakan Event Delegation ---
+            // Menambahkan satu event listener ke parent (tableBody)
+            tableBody.addEventListener('click', (event) => {
+                // Cek apakah elemen yang diklik adalah tombol delete
+                const deleteButton = event.target.closest('.action-link.delete');
+                if (deleteButton) {
+                    handleDeleteClick(deleteButton);
+                }
+            });
         });
 
         function formatRupiah(number) {
@@ -335,6 +343,7 @@
                 cancelDeleteBtn.removeEventListener('click', cancelHandler);
             }
 
+            // Gunakan { once: true } agar listener otomatis bersih setelah diklik
             confirmDeleteBtn.addEventListener('click', confirmHandler, { once: true });
             cancelDeleteBtn.addEventListener('click', cancelHandler, { once: true });
         }
@@ -376,9 +385,10 @@
                     tableBody.appendChild(row);
                 });
 
-                document.querySelectorAll('.delete').forEach(button => {
-                    button.addEventListener('click', handleDeleteClick);
-                });
+                // --- [DIHAPUS] Tidak perlu lagi menambahkan listener di sini ---
+                // document.querySelectorAll('.delete').forEach(button => {
+                //     button.addEventListener('click', handleDeleteClick);
+                // });
 
             } catch (error) {
                 console.error("Error fetching packages:", error);
@@ -386,9 +396,10 @@
             }
         }
 
-        function handleDeleteClick(event) {
-            const packageId = event.target.dataset.id;
-            const packageName = event.target.dataset.name;
+        // --- [PERBAIKAN] Fungsi ini sekarang menerima elemen tombol sebagai argumen ---
+        function handleDeleteClick(button) {
+            const packageId = button.dataset.id;
+            const packageName = button.dataset.name;
 
             showDeleteConfirmation(packageName, async () => {
                 try {
@@ -399,7 +410,7 @@
 
                     if (response.status === 204) {
                         alert('Package deleted successfully.');
-                        fetchPackages();
+                        fetchPackages(); // Muat ulang data setelah berhasil
                     } else {
                         const data = await response.json();
                         throw new Error(data.detail || 'Failed to delete package.');

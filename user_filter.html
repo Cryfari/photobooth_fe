@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terapkan Filter - AI Photobooth</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kdam+Thmor+Pro&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #D9773B;
+            --frame-bg-color: #FEFBF5;
+            --text-color: #FFFFFF;
+            --dark-text-color: #333;
+            --panel-bg: rgba(0, 0, 0, 0.1);
+            --active-photo-border: #FFFFFF;
+            --font-family: 'Kdam Thmor Pro', 'Segoe UI', sans-serif;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        .page-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 20px 40px;
+        }
+        .header-section { text-align: center; flex-shrink: 0; padding-bottom: 20px; }
+        h1 { font-size: clamp(1.8rem, 4vw, 2.5rem); margin: 0; }
+        .subtitle { font-size: 1.1rem; opacity: 0.9; margin-top: 8px; }
+
+        .content-body {
+            flex-grow: 1;
+            display: flex;
+            gap: 30px;
+            overflow: hidden;
+        }
+
+        /* Panel Foto di Kiri */
+        .photos-panel {
+            flex: 0 0 200px;
+            background-color: var(--panel-bg);
+            border-radius: 20px;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .photo-thumbnail {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            border-radius: 15px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 4px solid transparent;
+            transition: border-color 0.2s ease, transform 0.2s ease;
+        }
+        .photo-thumbnail:hover { transform: scale(1.03); }
+        .photo-thumbnail.active { border-color: var(--active-photo-border); }
+        .photo-thumbnail img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* Area Pratinjau dan Filter di Kanan */
+        .main-panel {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow: hidden;
+        }
+        .preview-area {
+            flex-grow: 1;
+            background-color: var(--frame-bg-color);
+            border-radius: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            min-height: 0; /* Penting untuk flexbox agar tidak meluap */
+        }
+        #previewImage {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 10px;
+            transition: filter 0.3s ease-in-out;
+        }
+        .filters-area {
+            flex-shrink: 0;
+            background-color: var(--panel-bg);
+            border-radius: 20px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        .filters-grid {
+            display: flex;
+            gap: 15px;
+            padding-bottom: 10px; /* Ruang untuk scrollbar */
+        }
+        .filter-item {
+            flex-shrink: 0;
+            text-align: center;
+            cursor: pointer;
+        }
+        .filter-item img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 3px solid transparent;
+            transition: border-color 0.2s ease;
+        }
+        .filter-item.active img { border-color: var(--active-photo-border); }
+        .filter-item p { margin: 8px 0 0 0; font-size: 0.9rem; font-weight: 600; }
+
+        .page-controls {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding-top: 20px;
+        }
+        .page-controls button {
+            font-family: inherit;
+            font-size: 1.2rem;
+            font-weight: 600;
+            background-color: transparent;
+            color: var(--text-color);
+            border: 2px solid rgba(255, 255, 255, 0.7);
+            padding: 10px 30px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        .page-controls button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: var(--text-color);
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="page-container">
+        <header class="header-section">
+            <h1>Tambahkan Sentuhan Akhir</h1>
+            <p class="subtitle">Pilih foto di kiri, lalu terapkan filter favoritmu.</p>
+        </header>
+        
+        <main class="content-body">
+            <aside id="photosPanel" class="photos-panel"></aside>
+            <div class="main-panel">
+                <div class="preview-area">
+                    <img id="previewImage" src="" alt="Pratinjau Foto">
+                </div>
+                <div class="filters-area">
+                    <div id="filtersGrid" class="filters-grid"></div>
+                </div>
+            </div>
+        </main>
+        
+        <footer class="page-controls">
+            <button id="continueButton">Lanjutkan ke Bingkai</button>
+        </footer>
+    </div>
+
+    <script type="module">
+        import { getAllImages, updateImage, clearImages } from './js/db.js';
+
+        // --- Elemen DOM ---
+        const photosPanel = document.getElementById('photosPanel');
+        const previewImage = document.getElementById('previewImage');
+        const filtersGrid = document.getElementById('filtersGrid');
+        const continueButton = document.getElementById('continueButton');
+
+        // --- State Aplikasi ---
+        let imagesData = []; // Akan berisi { id, blob, element, filter }
+        let activeImageIndex = 0;
+
+        const filters = [
+            { name: 'Original', style: 'none' },
+            { name: 'Charming', style: 'saturate(1.5) contrast(1.1)' },
+            { name: 'Excited', style: 'sepia(80%) hue-rotate(-20deg) saturate(1.5)' },
+            { name: 'Hefe', style: 'contrast(1.4) sepia(30%)' },
+            { name: 'Nashville', style: 'sepia(40%) contrast(1.2) brightness(1.05)' },
+            { name: 'Grayscale', style: 'grayscale(100%)' },
+            { name: 'Vintage', style: 'sepia(65%) contrast(0.9) brightness(1.1)'},
+            { name: 'Sunny', style: 'saturate(2) brightness(1.1)'},
+            { name: 'Cool', style: 'hue-rotate(180deg) contrast(1.1)'},
+        ];
+
+        // --- Fungsi-fungsi ---
+
+        /**
+         * Mengubah Blob menjadi Data URL untuk ditampilkan di <img>
+         */
+        function blobToDataURL(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
+        
+        /**
+         * Menggambar gambar dengan filter ke canvas dan mengembalikannya sebagai Blob baru
+         */
+        async function applyFilterToBlob(blob, filterStyle) {
+            const dataUrl = await blobToDataURL(blob);
+            const img = new Image();
+            await new Promise(resolve => {
+                img.onload = resolve;
+                img.src = dataUrl;
+            });
+
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            
+            if (filterStyle !== 'none') {
+                ctx.filter = filterStyle;
+            }
+            
+            ctx.drawImage(img, 0, 0);
+
+            return new Promise(resolve => {
+                canvas.toBlob(resolve, 'image/png');
+            });
+        }
+
+        /**
+         * Memuat gambar dari IndexedDB dan menampilkannya
+         */
+        async function loadImages() {
+            const imagesFromDB = await getAllImages();
+            if (!imagesFromDB || imagesFromDB.length === 0) {
+                alert("Tidak ada gambar yang ditemukan. Mengarahkan kembali...");
+                window.location.href = 'index.html';
+                return;
+            }
+
+            photosPanel.innerHTML = '';
+            for (const [index, imgRecord] of imagesFromDB.entries()) {
+                const dataUrl = await blobToDataURL(imgRecord.image);
+                
+                const thumbContainer = document.createElement('div');
+                thumbContainer.className = 'photo-thumbnail';
+                thumbContainer.dataset.index = index;
+                
+                const thumbImg = document.createElement('img');
+                thumbImg.src = dataUrl;
+                
+                thumbContainer.appendChild(thumbImg);
+                photosPanel.appendChild(thumbContainer);
+
+                imagesData.push({
+                    id: imgRecord.id,
+                    blob: imgRecord.image,
+                    element: thumbContainer,
+                    filter: 'none' // Filter awal
+                });
+
+                thumbContainer.addEventListener('click', () => setActiveImage(index));
+            }
+
+            if (imagesData.length > 0) {
+                setActiveImage(0);
+                renderFilterThumbnails();
+            }
+        }
+
+        /**
+         * Menampilkan thumbnail filter di panel bawah
+         */
+        async function renderFilterThumbnails() {
+            filtersGrid.innerHTML = '';
+            const sourceBlob = imagesData[0].blob; // Gunakan gambar pertama sebagai dasar thumbnail
+            const sourceUrl = await blobToDataURL(sourceBlob);
+
+            filters.forEach(filter => {
+                const item = document.createElement('div');
+                item.className = 'filter-item';
+                item.dataset.filter = filter.style;
+
+                const img = document.createElement('img');
+                img.src = sourceUrl;
+                img.style.filter = filter.style;
+                
+                const p = document.createElement('p');
+                p.textContent = filter.name;
+
+                item.appendChild(img);
+                item.appendChild(p);
+                filtersGrid.appendChild(item);
+
+                item.addEventListener('click', () => applyFilter(filter.style));
+            });
+        }
+
+        /**
+         * Mengatur gambar mana yang sedang aktif untuk diedit
+         */
+        async function setActiveImage(index) {
+            activeImageIndex = index;
+            
+            // Update UI thumbnail foto
+            imagesData.forEach((img, i) => {
+                img.element.classList.toggle('active', i === index);
+            });
+
+            // Update gambar pratinjau utama
+            const activeImageData = imagesData[index];
+            previewImage.src = await blobToDataURL(activeImageData.blob);
+            previewImage.style.filter = activeImageData.filter;
+
+            // Update UI thumbnail filter
+            document.querySelectorAll('.filter-item').forEach(item => {
+                item.classList.toggle('active', item.dataset.filter === activeImageData.filter);
+            });
+        }
+
+        /**
+         * Menerapkan filter ke gambar yang aktif
+         */
+        function applyFilter(filterStyle) {
+            const activeImageData = imagesData[activeImageIndex];
+            activeImageData.filter = filterStyle;
+            previewImage.style.filter = filterStyle;
+
+            // Update UI thumbnail filter
+            document.querySelectorAll('.filter-item').forEach(item => {
+                item.classList.toggle('active', item.dataset.filter === filterStyle);
+            });
+        }
+
+        /**
+         * Menyimpan semua perubahan filter ke IndexedDB dan melanjutkan
+         */
+        async function saveAndContinue() {
+            continueButton.disabled = true;
+            continueButton.textContent = 'Menyimpan...';
+
+            try {
+                for (const imageData of imagesData) {
+                    if (imageData.filter !== 'none') {
+                        const newBlob = await applyFilterToBlob(imageData.blob, imageData.filter);
+                        await updateImage(imageData.id, newBlob);
+                    }
+                }
+                // Hapus data lama dari sessionStorage untuk menghindari kebingungan
+                sessionStorage.removeItem('photoTemplateSelections');
+                sessionStorage.removeItem('capturedImages');
+
+                window.location.href = 'user_compose_layout.html';
+            } catch (error) {
+                console.error("Gagal menyimpan filter:", error);
+                alert("Terjadi kesalahan saat menyimpan filter. Silakan coba lagi.");
+                continueButton.disabled = false;
+                continueButton.textContent = 'Lanjutkan ke Bingkai';
+            }
+        }
+
+        // --- Event Listeners ---
+        continueButton.addEventListener('click', saveAndContinue);
+
+        // --- Inisialisasi ---
+        loadImages();
+    </script>
+</body>
+</html>

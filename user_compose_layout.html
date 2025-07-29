@@ -14,73 +14,91 @@
             --text-color: #FFFFFF;
             --dark-text-color: #333;
             --loading-spinner-color: #D9773B;
-            --selection-outline-color: #D9773B;
             --font-family: 'Kdam Thmor Pro', 'Segoe UI', sans-serif;
         }
         *, *::before, *::after { box-sizing: border-box; }
-        html, body { height: 100%; margin: 0; padding: 0; font-family: var(--font-family); background-color: var(--bg-color); color: var(--text-color); }
-        .page-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 40px; }
-        .view { width: 100%; max-width: 1200px; text-align: center; animation: fadeIn 0.5s ease-in-out; }
+        html, body { height: 100%; margin: 0; padding: 0; font-family: var(--font-family); background-color: var(--bg-color); color: var(--text-color); overflow: hidden; }
+        
+        .page-wrapper { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            padding: 20px; 
+        }
+        
+        .view { 
+            width: 100%; 
+            max-width: 1200px; 
+            text-align: center; 
+            animation: fadeIn 0.5s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
         .view.hidden { display: none; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .view-header { flex-shrink: 0; }
+        .view-content { 
+            flex-grow: 1; 
+            overflow-y: auto;
+            padding: 20px 0;
+        }
+        .view-footer { flex-shrink: 0; }
+
         h1 { font-size: clamp(1.8rem, 4vw, 2.5rem); margin-top: 0; margin-bottom: 20px; }
-        .subtitle { font-size: 1.1rem; opacity: 0.9; margin-bottom: 40px; }
+        .subtitle { font-size: 1.1rem; opacity: 0.9; margin-bottom: 20px; }
         #loadingView .loading-spinner { border-radius: 50%; width: 60px; height: 60px; border: 6px solid rgba(255, 255, 255, 0.3); border-top-color: var(--text-color); animation: spin 1s linear infinite; margin: 0 auto 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .layouts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 25px; margin-top: 30px; }
+        .layouts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 25px; }
         .layout-item { background-color: var(--frame-bg-color); border-radius: 16px; overflow: hidden; cursor: pointer; border: 4px solid transparent; transition: transform 0.2s ease, border-color 0.2s ease; }
         .layout-item:hover { transform: scale(1.03); }
         .layout-item img { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; display: block; background-color: #eee; }
         .layout-item .name { padding: 15px; font-weight: 600; color: var(--dark-text-color); }
-        #resultView .result-image-wrapper { background-color: var(--frame-bg-color); padding: 15px; border-radius: 20px; max-width: 230px; margin: 0 auto 30px auto; }
+        
+        .final-result-container {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+        #resultView .result-image-wrapper { background-color: var(--frame-bg-color);  border-radius: 20px; max-width: 20vh; flex-shrink: 0; }
         #resultImage { width: 100%; height: auto; border-radius: 12px; display: block; }
         
-        /* Container untuk tombol aksi */
-        .action-buttons-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 20px;
-        }
+        .public-qr-section { width: 100%; max-width: 320px; background-color: var(--frame-bg-color); color: #333; padding: 25px; border-radius: 20px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .public-qr-section h2 { margin: 0 0 15px 0; font-size: 1.2rem; color: var(--bg-color); }
+        .qr-code-wrapper { display: flex; flex-direction: column; align-items: center; gap: 15px; min-height: 250px; justify-content: center; }
+        
+        /* [BARU] Gaya untuk loading state di dalam QR box */
+        .qr-loading { display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--dark-text-color); font-weight: 600; }
+        .loading-spinner-small { border-radius: 50%; width: 40px; height: 40px; border: 4px solid rgba(0, 0, 0, 0.1); border-top-color: var(--loading-spinner-color); animation: spin 1s linear infinite; }
 
-        .action-button { 
-            font-family: inherit; 
-            font-size: 1.2rem; 
-            font-weight: bold; 
-            border-radius: 40px; 
-            cursor: pointer; 
-            padding: 15px 40px; 
-            transition: transform 0.2s, background-color 0.2s, opacity 0.2s; 
-            text-decoration: none;
-            border: 3px solid transparent;
-        }
-        .action-button.primary {
-            color: var(--bg-color); 
-            background-color: var(--text-color);
-        }
-         .action-button.primary:hover:not(:disabled) { 
-            transform: scale(1.05); 
-        }
-        /* Tombol sekunder (untuk Cetak) */
-        .action-button.secondary {
-            color: var(--text-color);
-            background-color: transparent;
-            border-color: var(--text-color);
-        }
-        .action-button.secondary:hover:not(:disabled) {
-            transform: scale(1.05);
-            background-color: var(--text-color);
-            color: var(--bg-color);
-        }
-        .action-button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            background-color: #a0a0a0;
-            border-color: #a0a0a0;
-            color: #e0e0e0;
-        }
+        #publicQrImage { width: 100%; max-width: 250px; height: auto; border-radius: 16px; border: 2px solid #eee; }
+        #publicFolderLink { font-family: inherit; font-size: 0.9rem; font-weight: bold; color: var(--bg-color); background: transparent; border: 2px solid var(--bg-color); border-radius: 20px; padding: 8px 20px; text-decoration: none; transition: background-color 0.2s, color 0.2s; }
+        #publicFolderLink:hover { background-color: var(--bg-color); color: white; }
 
-        #messageBox { margin-top: 20px; padding: 15px; border-radius: 8px; font-weight: 600; display: none; }
+        .action-buttons-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding-top: 20px; }
+        .action-button { font-family: inherit; font-size: 1.2rem; font-weight: bold; border-radius: 40px; cursor: pointer; padding: 15px 40px; transition: transform 0.2s, background-color 0.2s, opacity 0.2s; text-decoration: none; border: 3px solid transparent; }
+        .action-button.primary { color: var(--bg-color); background-color: var(--text-color); }
+        .action-button.primary:hover:not(:disabled) { transform: scale(1.05); }
+        .action-button.secondary { color: var(--text-color); background-color: transparent; border-color: var(--text-color); }
+        .action-button.secondary:hover:not(:disabled) { transform: scale(1.05); background-color: var(--text-color); color: var(--bg-color); }
+        .action-button:disabled { opacity: 0.6; cursor: not-allowed; background-color: #a0a0a0; border-color: #a0a0a0; color: #e0e0e0; }
+        #messageBox { margin-top: 20px; padding: 15px; border-radius: 8px; font-weight: 600; display: none; line-height: 1.5; }
+
+        @media (max-width: 768px) {
+            .final-result-container {
+                flex-direction: column;
+                gap: 30px;
+            }
+            .page-wrapper {
+                padding: 15px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -90,21 +108,44 @@
             <h1 id="loadingText">Mempersiapkan...</h1>
         </div>
         <div id="selectionView" class="view hidden">
-            <h1>Pilih Bingkai Favoritmu</h1>
-            <p class="subtitle">Klik salah satu bingkai di bawah untuk menggabungkan hasil fotomu.</p>
-            <div id="layoutsGrid" class="layouts-grid"></div>
+            <header class="view-header">
+                <h1>Pilih Bingkai Favoritmu</h1>
+                <p class="subtitle">Klik salah satu bingkai di bawah untuk menggabungkan hasil fotomu.</p>
+            </header>
+            <main class="view-content">
+                <div id="layoutsGrid" class="layouts-grid"></div>
+            </main>
         </div>
         <div id="resultView" class="view hidden">
-            <h1>Hore, Selesai!</h1>
-            <p class="subtitle">Cetak atau unduh hasil fotomu di bawah ini.</p>
-            <div class="result-image-wrapper">
-                <img id="resultImage" src="" alt="Hasil akhir foto yang digabungkan">
-            </div>
-            <!-- Container baru untuk tombol -->
-            <div class="action-buttons-container">
-                <button id="printButton" class="action-button secondary" disabled>Cetak Foto</button>
-                <a id="finishButton" href="index.html" class="action-button primary">Selesai</a>
-            </div>
+            <header class="view-header">
+                <h1>Hore, Selesai!</h1>
+                <p class="subtitle">Cetak atau unduh hasil fotomu di bawah ini.</p>
+            </header>
+            <main class="view-content">
+                <div class="final-result-container">
+                    <div class="result-image-wrapper">
+                        <img id="resultImage" src="" alt="Hasil akhir foto yang digabungkan">
+                    </div>
+                    <section id="publicQrSection" class="public-qr-section">
+                        <h2>Scan untuk Mengunduh Semua Foto</h2>
+                        <div class="qr-code-wrapper">
+                            <!-- [DIPERBAIKI] Tampilkan loading state secara default -->
+                            <div class="qr-loading">
+                                <div class="loading-spinner-small"></div>
+                                <p>Membuat tautan...</p>
+                            </div>
+                            <img id="publicQrImage" src="" alt="QR Code for Google Drive Folder" style="display: none;">
+                            <a id="publicFolderLink" href="#" target="_blank" rel="noopener noreferrer" style="display: none;">Buka Tautan Folder</a>
+                        </div>
+                    </section>
+                </div>
+            </main>
+            <footer class="view-footer">
+                <div class="action-buttons-container">
+                    <button id="printButton" class="action-button secondary" disabled>Cetak Foto</button>
+                    <a id="finishButton" href="index.html" class="action-button primary">Selesai</a>
+                </div>
+            </footer>
         </div>
         <div id="messageBox"></div>
     </div>
@@ -115,38 +156,31 @@
         const API_BASE_URL = 'http://127.0.0.1:8000';
         const state = {
             ticketCode: sessionStorage.getItem('ticketCode'),
-            generatedImages: [], // Akan diisi dari IndexedDB
-            composedFilename: null, // Untuk menyimpan nama file hasil compose
+            generatedImages: [],
+            composedFilename: null,
         };
 
-        // Referensi elemen DOM
-        const views = {
-            loading: document.getElementById('loadingView'),
-            selection: document.getElementById('selectionView'),
-            result: document.getElementById('resultView'),
-        };
+        const views = { loading: document.getElementById('loadingView'), selection: document.getElementById('selectionView'), result: document.getElementById('resultView'), };
         const loadingText = document.getElementById('loadingText');
         const layoutsGrid = document.getElementById('layoutsGrid');
         const resultImage = document.getElementById('resultImage');
         const messageBox = document.getElementById('messageBox');
         const printButton = document.getElementById('printButton');
         
-        // Fungsi untuk menampilkan view tertentu
         function showView(viewName) { 
             Object.keys(views).forEach(key => views[key].classList.toggle('hidden', key !== viewName)); 
         }
 
-        // Fungsi untuk menampilkan pesan error
         function showError(message) { 
             showView('loading'); 
             loadingText.textContent = 'Oops! Terjadi Kesalahan'; 
-            messageBox.textContent = message; 
+            messageBox.innerHTML = `${message}<br><br>Silakan hubungi admin untuk bantuan. Anda akan diarahkan ke halaman utama dalam 5 detik.`; 
             messageBox.style.backgroundColor = '#ffdddd';
             messageBox.style.color = '#D8000C';
             messageBox.style.display = 'block'; 
+            setTimeout(() => { window.location.href = 'index.html'; }, 5000);
         }
         
-        // Fungsi untuk menampilkan pesan sukses
         function showSuccess(message) {
             messageBox.textContent = message;
             messageBox.style.backgroundColor = '#d4edda';
@@ -155,17 +189,44 @@
             setTimeout(() => { messageBox.style.display = 'none'; }, 4000);
         }
 
-        /**
-         * Mengirim request ke backend untuk menggabungkan foto dengan layout yang dipilih.
-         * @param {number} layoutId - ID dari layout yang dipilih.
-         */
+        async function createPublicFolderAndShowQR() {
+            // [DIPERBAIKI] Dapatkan referensi ke elemen loading dan hasil QR
+            const qrWrapper = document.querySelector('.qr-code-wrapper');
+            const qrLoader = qrWrapper.querySelector('.qr-loading');
+            const qrImageEl = document.getElementById('publicQrImage');
+            const qrLinkEl = document.getElementById('publicFolderLink');
+
+            try {
+                const folderResponse = await fetch(`${API_BASE_URL}/google-drive/create-public-folder/${state.ticketCode}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                if (!folderResponse.ok) {
+                    const errorData = await folderResponse.json().catch(() => ({}));
+                    throw new Error(errorData.detail || 'Gagal membuat folder unduhan.');
+                }
+                const folderData = await folderResponse.json();
+
+                // [DIPERBAIKI] Sembunyikan loader dan tampilkan QR code & link
+                qrLoader.style.display = 'none';
+                qrImageEl.src = `data:image/png;base64,${folderData.qr_code_base64}`;
+                qrLinkEl.href = folderData.folder_link;
+                qrImageEl.style.display = 'block';
+                qrLinkEl.style.display = 'block';
+
+            } catch (e) {
+                // [DIPERBAIKI] Tampilkan pesan error di dalam area QR
+                qrLoader.innerHTML = `<p style="color: #D8000C; font-size: 0.9rem;">Gagal membuat tautan unduhan.</p>`;
+                showSuccess(`Gagal membuat folder unduhan: ${e.message}. Anda masih bisa mencetak.`);
+            }
+        }
+
         async function composeLayout(layoutId) {
             showView('loading');
             loadingText.textContent = 'Menggabungkan foto...';
 
             const formData = new FormData();
             state.generatedImages.forEach((imageObj, index) => {
-                // imageObj.image adalah Blob yang diambil dari IndexedDB
                 formData.append('photos', imageObj.image, `photo_${index}.png`);
             });
 
@@ -182,13 +243,13 @@
                     throw new Error(errorMessage || 'Gagal menggabungkan gambar.');
                 }
 
-                // Tampilkan gambar hasil dan simpan nama filenya
                 resultImage.src = `${API_BASE_URL}${data.image_url}`;
-                state.composedFilename = data.filename; // Simpan nama file untuk dicetak
-                printButton.disabled = false; // Aktifkan tombol cetak
+                state.composedFilename = data.filename;
+                printButton.disabled = false;
 
                 showView('result');
-                await clearImages(); // Bersihkan IndexedDB setelah berhasil
+                await createPublicFolderAndShowQR();
+                await clearImages();
 
             } catch (error) {
                 console.error('Composition Error:', error);
@@ -196,10 +257,6 @@
             }
         }
 
-        /**
-         * Mengambil daftar layout yang tersedia dari API dan menampilkannya.
-         * @param {number} slotCount - Jumlah foto yang akan dimasukkan ke layout.
-         */
         async function fetchAndDisplayLayouts(slotCount) {
             loadingText.textContent = 'Memuat pilihan bingkai...';
             try {
@@ -229,9 +286,6 @@
             }
         }
 
-        /**
-         * Fungsi inisialisasi utama yang dijalankan saat halaman dimuat.
-         */
         async function initialize() {
             if (!state.ticketCode) {
                 alert('Sesi tidak valid. Kembali ke halaman awal.');
@@ -240,13 +294,12 @@
             }
             
             showView('loading');
-            loadingText.textContent = 'Memuat gambar hasil AI...';
+            loadingText.textContent = 'Memuat gambar...';
 
-            // Ambil data gambar dari IndexedDB
             state.generatedImages = await getAllImages();
 
             if (state.generatedImages.length === 0) {
-                alert('Tidak ada gambar AI yang ditemukan. Kembali ke halaman awal.');
+                alert('Tidak ada gambar yang ditemukan. Kembali ke halaman awal.');
                 window.location.href = 'index.html';
                 return;
             }
@@ -255,7 +308,6 @@
             loadingText.textContent = 'Mengecek layout default...';
 
             try {
-                // Coba gunakan layout default jika ada dan cocok
                 const response = await fetch(`${API_BASE_URL}/public/layouts/default`);
                 if (response.ok) {
                     const defaultLayout = await response.json();
@@ -264,7 +316,6 @@
                         return;
                     }
                 }
-                // Jika tidak ada layout default atau tidak cocok, tampilkan pilihan
                 await fetchAndDisplayLayouts(photoCount);
             } catch (error) {
                 console.warn('Could not fetch default layout, proceeding to selection.', error);
@@ -272,7 +323,6 @@
             }
         }
 
-        // Event listener untuk tombol cetak
         printButton.addEventListener('click', async () => {
             if (!state.composedFilename || printButton.disabled) return;
 
@@ -300,15 +350,15 @@
                 console.error('Print Error:', error);
                 showError(error.message);
             } finally {
-                // Aktifkan kembali tombol setelah beberapa saat
-                setTimeout(() => {
-                    printButton.disabled = false;
-                    printButton.textContent = 'Cetak Foto';
-                }, 3000);
+                if (!messageBox.textContent.includes('hubungi admin')) {
+                     setTimeout(() => {
+                        printButton.disabled = false;
+                        printButton.textContent = 'Cetak Foto';
+                    }, 3000);
+                }
             }
         });
 
-        // Jalankan inisialisasi
         initialize();
     </script>
 </body>
