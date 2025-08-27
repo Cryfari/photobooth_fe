@@ -143,6 +143,27 @@
             background-color: rgba(255, 255, 255, 0.1);
             border-color: var(--text-color);
         }
+        
+        /* [BARU] Gaya untuk notifikasi status */
+        #statusMessage {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        #statusMessage.visible {
+            opacity: 1;
+            visibility: visible;
+        }
     </style>
 </head>
 <body>
@@ -170,6 +191,9 @@
         </footer>
     </div>
 
+    <!-- [BARU] Elemen untuk notifikasi -->
+    <div id="statusMessage"></div>
+
     <script type="module">
         import { getAllImages, updateImage, clearImages } from './js/db.js';
 
@@ -178,6 +202,8 @@
         const previewImage = document.getElementById('previewImage');
         const filtersGrid = document.getElementById('filtersGrid');
         const continueButton = document.getElementById('continueButton');
+        const statusMessage = document.getElementById('statusMessage'); // [BARU]
+        const API_BASE_URL = 'http://127.0.0.1:8000'; // [BARU]
 
         // --- State Aplikasi ---
         let imagesData = []; // Akan berisi { id, blob, element, filter }
@@ -196,6 +222,69 @@
         ];
 
         // --- Fungsi-fungsi ---
+
+        /**
+         * [BARU] Menampilkan notifikasi status sementara.
+         */
+        function showStatusMessage(message, isError = false, duration = 3000) {
+            statusMessage.textContent = message;
+            statusMessage.style.backgroundColor = isError ? '#D73737' : '#29CC97';
+            statusMessage.classList.add('visible');
+            setTimeout(() => {
+                statusMessage.classList.remove('visible');
+            }, duration);
+        }
+
+        /**
+         * [BARU] Mengunggah satu gambar ke Google Drive di latar belakang.
+         * @param {Blob} imageBlob - Blob gambar yang akan diunggah.
+         * @param {string} imageName - Nama file yang akan digunakan di Google Drive.
+         */
+        async function uploadImageToDrive(imageBlob, imageName) {
+            const ticketCode = sessionStorage.getItem('ticketCode');
+            if (!ticketCode) {
+                console.error('Upload failed: Ticket code not found.');
+                return;
+            }
+
+            // Konversi Blob ke string Base64
+            const reader = new FileReader();
+            reader.readAsDataURL(imageBlob);
+            reader.onloadend = async () => {
+                // Hasilnya berisi prefix data URL, misal: "data:image/png;base64,"
+                // API membutuhkan string base64 mentah, jadi kita hapus prefix-nya.
+                const base64data = reader.result.split(',')[1];
+
+                const payload = {
+                    image_base64: base64data,
+                    // API menggunakan 'template_name' sebagai nama file.
+                    template_name: imageName 
+                };
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/google-drive/upload-in-background/${ticketCode}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    // Status 202 berarti permintaan diterima untuk diproses di latar belakang.
+                    if (response.status === 202) {
+                        console.log(`Image '${imageName}' accepted for background upload.`);
+                        showStatusMessage(`Mengunggah ${imageName.split('-')[2]}...`, false, 2000);
+                    } else {
+                        const errorData = await response.json();
+                        throw new Error(errorData.detail || `Server error: ${response.status}`);
+                    }
+                } catch (error) {
+                    console.error(`Failed to upload image '${imageName}':`, error);
+                    showStatusMessage(`Gagal mengunggah ${imageName.split('-')[2]}`, true);
+                }
+            };
+            reader.onerror = (error) => {
+                console.error('Error converting blob to Base64:', error);
+            };
+        }
 
         /**
          * Mengubah Blob menjadi Data URL untuk ditampilkan di <img>
@@ -342,24 +431,43 @@
         }
 
         /**
-         * Menyimpan semua perubahan filter ke IndexedDB dan melanjutkan
+         * Menyimpan semua perubahan filter ke IndexedDB, memulai unggahan ke GDrive, dan melanjutkan
          */
         async function saveAndContinue() {
             continueButton.disabled = true;
             continueButton.textContent = 'Menyimpan...';
 
             try {
+                // Loop melalui setiap gambar untuk menerapkan filter dan memulai unggahan
                 for (const imageData of imagesData) {
+                    let blobToProcess = imageData.blob;
+                    
+                    // Jika filter diterapkan, buat blob baru dan perbarui IndexedDB
                     if (imageData.filter !== 'none') {
                         const newBlob = await applyFilterToBlob(imageData.blob, imageData.filter);
                         await updateImage(imageData.id, newBlob);
+                        blobToProcess = newBlob;
                     }
+                    
+                    // [LOGIKA BARU] Memulai unggahan ke Google Drive
+                    const filterName = filters.find(f => f.style === imageData.filter)?.name || 'Original';
+                    const imageName = `photobooth-image-${imageData.id}-${filterName.toLowerCase().replace(/\s/g, '-')}.png`;
+                    
+                    // Panggil fungsi unggah tanpa 'await' agar tidak memblokir UI
+                    uploadImageToDrive(blobToProcess, imageName);
                 }
-                // Hapus data lama dari sessionStorage untuk menghindari kebingungan
+                
+                showStatusMessage('Perubahan disimpan & unggahan dimulai!', false);
+
+                // Hapus data sesi lama
                 sessionStorage.removeItem('photoTemplateSelections');
                 sessionStorage.removeItem('capturedImages');
+                
+                // Beri jeda agar pengguna bisa melihat pesan status terakhir sebelum pindah halaman
+                setTimeout(() => {
+                    window.location.href = 'user_compose_layout.html';
+                }, 1500);
 
-                window.location.href = 'user_compose_layout.html';
             } catch (error) {
                 console.error("Gagal menyimpan filter:", error);
                 alert("Terjadi kesalahan saat menyimpan filter. Silakan coba lagi.");

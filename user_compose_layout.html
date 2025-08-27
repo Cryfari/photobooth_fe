@@ -73,7 +73,6 @@
         .public-qr-section h2 { margin: 0 0 15px 0; font-size: 1.2rem; color: var(--bg-color); }
         .qr-code-wrapper { display: flex; flex-direction: column; align-items: center; gap: 15px; min-height: 250px; justify-content: center; }
         
-        /* [BARU] Gaya untuk loading state di dalam QR box */
         .qr-loading { display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--dark-text-color); font-weight: 600; }
         .loading-spinner-small { border-radius: 50%; width: 40px; height: 40px; border: 4px solid rgba(0, 0, 0, 0.1); border-top-color: var(--loading-spinner-color); animation: spin 1s linear infinite; }
 
@@ -90,14 +89,43 @@
         .action-button:disabled { opacity: 0.6; cursor: not-allowed; background-color: #a0a0a0; border-color: #a0a0a0; color: #e0e0e0; }
         #messageBox { margin-top: 20px; padding: 15px; border-radius: 8px; font-weight: 600; display: none; line-height: 1.5; }
 
+        /* Gaya untuk Modal Pemilihan Foto */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 1000; opacity: 0; visibility: hidden;
+            transition: opacity 0.3s ease;
+        }
+        .modal-overlay.visible { opacity: 1; visibility: visible; }
+        .modal-content {
+            background-color: var(--frame-bg-color); color: var(--dark-text-color);
+            padding: 25px; border-radius: 20px; width: 90%; max-width: 800px;
+            max-height: 90vh; display: flex; flex-direction: column;
+            transform: scale(0.9); transition: transform 0.3s ease;
+        }
+        .modal-overlay.visible .modal-content { transform: scale(1); }
+        .modal-header { text-align: center; margin-bottom: 20px; }
+        .modal-header h2 { margin: 0; }
+        .modal-header p { margin: 5px 0 0; color: #666; }
+        .modal-body { overflow-y: auto; padding: 10px; }
+        .photo-selection-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; }
+        .photo-selection-item { position: relative; cursor: pointer; border-radius: 10px; overflow: hidden; border: 4px solid transparent; }
+        .photo-selection-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .photo-selection-item.selected { border-color: var(--bg-color); }
+        .photo-selection-item .checkmark {
+            position: absolute; top: 8px; right: 8px; width: 24px; height: 24px;
+            background-color: white; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; transform: scale(0.5); transition: all 0.2s ease;
+        }
+        .photo-selection-item.selected .checkmark { opacity: 1; transform: scale(1); }
+        .photo-selection-item .checkmark svg { width: 16px; height: 16px; fill: var(--bg-color); }
+        .modal-footer { text-align: center; padding-top: 20px; }
+
         @media (max-width: 768px) {
-            .final-result-container {
-                flex-direction: column;
-                gap: 30px;
-            }
-            .page-wrapper {
-                padding: 15px;
-            }
+            .final-result-container { flex-direction: column; gap: 30px; }
+            .page-wrapper { padding: 15px; }
         }
     </style>
 </head>
@@ -129,7 +157,6 @@
                     <section id="publicQrSection" class="public-qr-section">
                         <h2>Scan untuk Mengunduh Semua Foto</h2>
                         <div class="qr-code-wrapper">
-                            <!-- [DIPERBAIKI] Tampilkan loading state secara default -->
                             <div class="qr-loading">
                                 <div class="loading-spinner-small"></div>
                                 <p>Membuat tautan...</p>
@@ -150,14 +177,31 @@
         <div id="messageBox"></div>
     </div>
 
+    <!-- Modal untuk Pemilihan Foto -->
+    <div id="photoSelectionModal" class="modal-overlay">
+        <div class="modal-content">
+            <header class="modal-header">
+                <h2 id="modalTitle">Pilih Foto</h2>
+                <p id="modalSubtitle">Pilih X dari Y foto untuk bingkai ini.</p>
+            </header>
+            <main class="modal-body">
+                <div id="photoSelectionGrid" class="photo-selection-grid"></div>
+            </main>
+            <footer class="modal-footer">
+                <button id="confirmSelectionBtn" class="action-button primary" disabled>Konfirmasi Pilihan</button>
+            </footer>
+        </div>
+    </div>
+
     <script type="module">
         import { getAllImages, clearImages } from './js/db.js';
 
         const API_BASE_URL = 'http://127.0.0.1:8000';
         const state = {
             ticketCode: sessionStorage.getItem('ticketCode'),
-            generatedImages: [],
+            generatedImages: [], // Berisi { id, image: Blob }
             composedFilename: null,
+            selectedPhotosForComposition: [], // Menyimpan foto yang dipilih
         };
 
         const views = { loading: document.getElementById('loadingView'), selection: document.getElementById('selectionView'), result: document.getElementById('resultView'), };
@@ -166,6 +210,13 @@
         const resultImage = document.getElementById('resultImage');
         const messageBox = document.getElementById('messageBox');
         const printButton = document.getElementById('printButton');
+        
+        // Elemen Modal
+        const photoSelectionModal = document.getElementById('photoSelectionModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalSubtitle = document.getElementById('modalSubtitle');
+        const photoSelectionGrid = document.getElementById('photoSelectionGrid');
+        const confirmSelectionBtn = document.getElementById('confirmSelectionBtn');
         
         function showView(viewName) { 
             Object.keys(views).forEach(key => views[key].classList.toggle('hidden', key !== viewName)); 
@@ -190,7 +241,6 @@
         }
 
         async function createPublicFolderAndShowQR() {
-            // [DIPERBAIKI] Dapatkan referensi ke elemen loading dan hasil QR
             const qrWrapper = document.querySelector('.qr-code-wrapper');
             const qrLoader = qrWrapper.querySelector('.qr-loading');
             const qrImageEl = document.getElementById('publicQrImage');
@@ -207,7 +257,6 @@
                 }
                 const folderData = await folderResponse.json();
 
-                // [DIPERBAIKI] Sembunyikan loader dan tampilkan QR code & link
                 qrLoader.style.display = 'none';
                 qrImageEl.src = `data:image/png;base64,${folderData.qr_code_base64}`;
                 qrLinkEl.href = folderData.folder_link;
@@ -215,18 +264,17 @@
                 qrLinkEl.style.display = 'block';
 
             } catch (e) {
-                // [DIPERBAIKI] Tampilkan pesan error di dalam area QR
                 qrLoader.innerHTML = `<p style="color: #D8000C; font-size: 0.9rem;">Gagal membuat tautan unduhan.</p>`;
                 showSuccess(`Gagal membuat folder unduhan: ${e.message}. Anda masih bisa mencetak.`);
             }
         }
-
-        async function composeLayout(layoutId) {
+        
+        async function composeLayout(layoutId, photosToCompose) {
             showView('loading');
             loadingText.textContent = 'Menggabungkan foto...';
 
             const formData = new FormData();
-            state.generatedImages.forEach((imageObj, index) => {
+            photosToCompose.forEach((imageObj, index) => {
                 formData.append('photos', imageObj.image, `photo_${index}.png`);
             });
 
@@ -257,17 +305,95 @@
             }
         }
 
-        async function fetchAndDisplayLayouts(slotCount) {
+        async function showPhotoSelectionModal(layout) {
+            const requiredSlots = layout.slots;
+            const availablePhotos = state.generatedImages.length;
+            state.selectedPhotosForComposition = []; // Reset pilihan
+
+            modalSubtitle.textContent = `Pilih ${requiredSlots} dari ${availablePhotos} foto untuk bingkai ini.`;
+            photoSelectionGrid.innerHTML = '';
+            confirmSelectionBtn.disabled = true;
+
+            for (const [index, imageObj] of state.generatedImages.entries()) {
+                const reader = new FileReader();
+                reader.readAsDataURL(imageObj.image);
+                reader.onloadend = () => {
+                    const dataUrl = reader.result;
+                    const item = document.createElement('div');
+                    item.className = 'photo-selection-item';
+                    item.dataset.index = index;
+                    item.innerHTML = `
+                        <img src="${dataUrl}" alt="Foto ${index + 1}">
+                        <div class="checkmark">
+                            <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        </div>
+                    `;
+                    item.addEventListener('click', () => {
+                        const isSelected = item.classList.toggle('selected');
+                        const photoIndex = parseInt(item.dataset.index, 10);
+                        
+                        if (isSelected) {
+                            state.selectedPhotosForComposition.push(state.generatedImages[photoIndex]);
+                        } else {
+                            state.selectedPhotosForComposition = state.selectedPhotosForComposition.filter(p => p.id !== state.generatedImages[photoIndex].id);
+                        }
+                        
+                        if (state.selectedPhotosForComposition.length > requiredSlots) {
+                            const removedPhoto = state.selectedPhotosForComposition.shift();
+                            const removedElement = photoSelectionGrid.querySelector(`.photo-selection-item[data-index='${state.generatedImages.findIndex(p => p.id === removedPhoto.id)}']`);
+                            if(removedElement) removedElement.classList.remove('selected');
+                        }
+                        
+                        modalSubtitle.textContent = `Pilih ${requiredSlots} dari ${availablePhotos} foto (${state.selectedPhotosForComposition.length}/${requiredSlots} dipilih).`;
+                        confirmSelectionBtn.disabled = state.selectedPhotosForComposition.length !== requiredSlots;
+                    });
+                    photoSelectionGrid.appendChild(item);
+                };
+            }
+            
+            confirmSelectionBtn.onclick = () => {
+                photoSelectionModal.classList.remove('visible');
+                composeLayout(layout.id, state.selectedPhotosForComposition);
+            };
+
+            photoSelectionModal.classList.add('visible');
+        }
+
+        function handleLayoutClick(layout) {
+            const requiredSlots = layout.slots;
+            const availablePhotos = state.generatedImages.length;
+
+            if (requiredSlots < availablePhotos) {
+                showPhotoSelectionModal(layout);
+            } else {
+                const photosToUse = state.generatedImages.slice(0, requiredSlots);
+                composeLayout(layout.id, photosToUse);
+            }
+        }
+
+        async function fetchAndDisplayLayouts(photoCount) {
             loadingText.textContent = 'Memuat pilihan bingkai...';
             try {
-                const response = await fetch(`${API_BASE_URL}/public/layouts/?slots=${slotCount}`, {
+                // [DIPERBARUI] Prioritaskan mengambil layout yang jumlah slotnya sama dengan jumlah foto.
+                let response = await fetch(`${API_BASE_URL}/public/layouts/?slots=${photoCount}`, {
                     headers: { 'X-Ticket-Token': state.ticketCode }
                 });
                 if (!response.ok) throw new Error((await response.json()).detail || 'Gagal memuat layout.');
                 
-                const availableLayouts = await response.json();
+                let availableLayouts = await response.json();
+                
+                // Jika tidak ada layout yang cocok, coba ambil semua layout yang tersedia.
                 if (availableLayouts.length === 0) {
-                    showError(`Tidak ada bingkai yang tersedia untuk ${slotCount} foto.`);
+                    showSuccess("Tidak ada bingkai yang pas, menampilkan semua pilihan.");
+                    response = await fetch(`${API_BASE_URL}/public/layouts/`, {
+                        headers: { 'X-Ticket-Token': state.ticketCode }
+                    });
+                    if (!response.ok) throw new Error((await response.json()).detail || 'Gagal memuat semua layout.');
+                    availableLayouts = await response.json();
+                }
+
+                if (availableLayouts.length === 0) {
+                    showError(`Tidak ada bingkai yang tersedia.`);
                     return;
                 }
 
@@ -275,8 +401,8 @@
                 availableLayouts.forEach(layout => {
                     const item = document.createElement('div');
                     item.className = 'layout-item';
-                    item.innerHTML = `<img src="${API_BASE_URL}/${layout.border_image_path.replace(/\\/g, '/')}" alt="${layout.name}" loading="lazy"><div class="name">${layout.name}</div>`;
-                    item.addEventListener('click', () => composeLayout(layout.id));
+                    item.innerHTML = `<img src="${API_BASE_URL}/${layout.border_image_path.replace(/\\/g, '/')}" alt="${layout.name}" loading="lazy"><div class="name">${layout.name} (${layout.slots} slots)</div>`;
+                    item.addEventListener('click', () => handleLayoutClick(layout));
                     layoutsGrid.appendChild(item);
                 });
                 showView('selection');
@@ -311,8 +437,8 @@
                 const response = await fetch(`${API_BASE_URL}/public/layouts/default`);
                 if (response.ok) {
                     const defaultLayout = await response.json();
-                    if (defaultLayout.slots.length === photoCount) {
-                        await composeLayout(defaultLayout.id);
+                    if (defaultLayout.slots === photoCount) {
+                        await composeLayout(defaultLayout.id, state.generatedImages);
                         return;
                     }
                 }
